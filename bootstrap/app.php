@@ -11,6 +11,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Confiar en el proxy de Railway para que HTTPS funcione correctamente
+        $middleware->trustProxies(at: '*');
+
         $middleware->alias([
             'es_admin' => \App\Http\Middleware\EsAdmin::class,
         ]);
