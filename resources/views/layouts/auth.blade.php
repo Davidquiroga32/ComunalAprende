@@ -24,7 +24,6 @@
     @yield('content')
 
     
-    @vite(['resources/js/main.js', 'resources/js/auth.js'])
     @yield('extra-js')
 
 </body>
