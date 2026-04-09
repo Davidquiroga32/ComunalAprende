@@ -50,8 +50,8 @@
 .slide-overlay {
     position: absolute; inset: 0;
     background:
-        linear-gradient(90deg, rgba(10,37,64,.82) 0%, rgba(10,37,64,.55) 55%, rgba(10,37,64,.2) 100%),
-        linear-gradient(0deg, rgba(10,37,64,.4) 0%, transparent 40%);
+        linear-gradient(90deg, rgba(10,37,64,.72) 0%, rgba(10,37,64,.38) 45%, rgba(10,37,64,.08) 100%),
+        linear-gradient(0deg, rgba(10,37,64,.35) 0%, transparent 35%);
 }
 
 /* Partículas decorativas */
