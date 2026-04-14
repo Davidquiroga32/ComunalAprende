@@ -148,22 +148,116 @@
 .user-menu .logout-btn { color: #dc2626; border-top: 1px solid #f1f5f9; }
 .user-menu .logout-btn i { color: #dc2626; }
 
-/* ── MOBILE ── */
+/* ── MOBILE TOGGLE ── */
 .mobile-menu-toggle {
     display: none; background: none; border: 1.5px solid #dde4ee;
-    border-radius: 8px; width: 38px; height: 38px;
+    border-radius: 8px; width: 40px; height: 40px;
     align-items: center; justify-content: center;
     color: #334155; cursor: pointer; transition: all .18s;
+    flex-shrink: 0;
 }
 .mobile-menu-toggle:hover { background: #EBF3FF; border-color: #0A4D8C; color: #0A4D8C; }
 
+/* ── PANEL MENÚ MÓVIL ── */
+.mobile-nav-overlay {
+    display: none; position: fixed; inset: 0; z-index: 998;
+    background: rgba(0,0,0,.4);
+}
+.mobile-nav-overlay.open { display: block; }
+
+.mobile-nav-panel {
+    position: fixed; top: 0; right: -100%; z-index: 999;
+    width: min(300px, 82vw); height: 100vh;
+    background: #fff;
+    box-shadow: -6px 0 40px rgba(10,37,64,.18);
+    transition: right .28s cubic-bezier(.4,0,.2,1);
+    display: flex; flex-direction: column;
+    overflow-y: auto;
+}
+.mobile-nav-panel.open { right: 0; }
+
+/* Cabecera del panel */
+.mnp-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem 1.1rem;
+    background: linear-gradient(135deg, #071D36, #0A4D8C);
+    flex-shrink: 0;
+}
+.mnp-logo { display: flex; align-items: center; gap: .55rem; text-decoration: none; }
+.mnp-logo img { height: 38px; width: auto; }
+.mnp-logo-text { display: flex; flex-direction: column; line-height: 1.1; }
+.mnp-logo-text span:first-child {
+    font-family: 'Outfit', sans-serif; font-size: .9rem;
+    font-weight: 800; color: #fff;
+}
+.mnp-logo-text span:last-child {
+    font-family: 'Outfit', sans-serif; font-size: .62rem;
+    font-weight: 700; color: rgba(255,255,255,.6);
+    text-transform: uppercase; letter-spacing: .1em;
+}
+.mnp-close {
+    background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2);
+    border-radius: 8px; width: 34px; height: 34px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; cursor: pointer; font-size: .95rem;
+    transition: background .18s;
+}
+.mnp-close:hover { background: rgba(255,255,255,.22); }
+
+/* Links del panel */
+.mnp-section-label {
+    padding: .85rem 1.1rem .35rem;
+    font-family: 'Outfit', sans-serif;
+    font-size: .67rem; font-weight: 700;
+    color: #94a3b8; text-transform: uppercase; letter-spacing: .1em;
+}
+.mnp-links { list-style: none; padding: 0 .5rem; margin: 0; }
+.mnp-links li a {
+    display: flex; align-items: center; gap: .7rem;
+    padding: .8rem .75rem; border-radius: 8px;
+    font-family: 'Outfit', sans-serif;
+    font-size: .92rem; font-weight: 600; color: #334155;
+    text-decoration: none; transition: all .15s;
+}
+.mnp-links li a:hover, .mnp-links li a.active {
+    background: #EBF3FF; color: #0A4D8C;
+}
+.mnp-links li a i {
+    width: 20px; text-align: center;
+    color: #0A4D8C; opacity: .75; font-size: .82rem;
+}
+.mnp-divider { height: 1px; background: #f1f5f9; margin: .5rem 1.1rem; }
+
+/* Acciones autenticado / invitado en panel */
+.mnp-user-info {
+    margin: .5rem; padding: .8rem 1rem;
+    background: linear-gradient(135deg, #f0f7ff, #e8f2ff);
+    border-radius: 10px; border: 1px solid #c5d9f0;
+}
+.mnp-user-name { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: .88rem; color: #073A6B; }
+.mnp-user-email { font-size: .72rem; color: #94a3b8; margin-top: .1rem; }
+
+.mnp-auth-btns {
+    display: flex; flex-direction: column; gap: .5rem;
+    padding: .75rem .5rem 1rem;
+}
+.mnp-auth-btns .btn-nav-ghost,
+.mnp-auth-btns .btn-nav-primary {
+    width: 100%; justify-content: center;
+    padding: .7rem; font-size: .9rem; border-radius: 8px;
+}
+
+/* ── MEDIA QUERIES ── */
 @media (max-width: 860px) {
     .nav-menu { display: none; }
     .mobile-menu-toggle { display: flex; }
     .nav-actions .btn-nav-ghost { display: none; }
+    .nav-actions .btn-nav-primary { display: none; }
+    .nav-actions .user-dropdown { display: none; }
 }
 @media (max-width: 480px) {
     .logo-text { display: none; }
+    .nav-container { padding: 0 1rem; height: 68px; }
 }
 
 /* Padding compensación header fijo */
@@ -193,7 +287,7 @@ body > div:first-child,
             </div>
         </a>
 
-        {{-- MENÚ PRINCIPAL --}}
+        {{-- MENÚ PRINCIPAL (desktop) --}}
         <ul class="nav-menu" id="navMenu">
             <li>
                 <a href="{{ route('inicio') }}" class="{{ Request::routeIs('inicio') ? 'active' : '' }}">
@@ -217,7 +311,7 @@ body > div:first-child,
             </li>
         </ul>
 
-        {{-- ACCIONES --}}
+        {{-- ACCIONES DESKTOP --}}
         <div class="nav-actions">
             @auth
                 <div class="user-dropdown">
@@ -232,7 +326,6 @@ body > div:first-child,
                             <div class="user-menu-name">{{ Auth::user()->name }}</div>
                             <div class="user-menu-email">{{ Auth::user()->email }}</div>
                         </div>
-
                         <a href="{{ route('dashboard') }}">
                             <i class="fas fa-th-large"></i> Mi Panel
                         </a>
@@ -272,6 +365,112 @@ body > div:first-child,
     </nav>
 </header>
 
+{{-- OVERLAY + PANEL MÓVIL --}}
+<div class="mobile-nav-overlay" id="mobileOverlay" onclick="closeMobileMenu()"></div>
+
+<div class="mobile-nav-panel" id="mobileNavPanel">
+
+    {{-- Cabecera del panel --}}
+    <div class="mnp-header">
+        <a href="{{ route('inicio') }}" class="mnp-logo" onclick="closeMobileMenu()">
+            <img src="{{ asset('images/logo.png') }}" alt="Logo">
+            <div class="mnp-logo-text">
+                <span>Comunal</span>
+                <span>Aprende</span>
+            </div>
+        </a>
+        <button class="mnp-close" onclick="closeMobileMenu()" aria-label="Cerrar">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+
+    {{-- Links de navegación --}}
+    <div class="mnp-section-label">Navegación</div>
+    <ul class="mnp-links">
+        <li>
+            <a href="{{ route('inicio') }}" class="{{ Request::routeIs('inicio') ? 'active' : '' }}" onclick="closeMobileMenu()">
+                <i class="fas fa-home"></i> Inicio
+            </a>
+        </li>
+        <li>
+            <a href="{{ route('cursos.index') }}" class="{{ Request::routeIs('cursos.*') ? 'active' : '' }}" onclick="closeMobileMenu()">
+                <i class="fas fa-graduation-cap"></i> Cursos
+            </a>
+        </li>
+        <li>
+            <a href="{{ route('contacto') }}" class="{{ Request::routeIs('contacto') ? 'active' : '' }}" onclick="closeMobileMenu()">
+                <i class="fas fa-envelope"></i> Contáctanos
+            </a>
+        </li>
+        <li>
+            <a href="{{ route('normatividad') }}" class="{{ Request::routeIs('normatividad') ? 'active' : '' }}" onclick="closeMobileMenu()">
+                <i class="fas fa-file-alt"></i> Normatividad
+            </a>
+        </li>
+    </ul>
+
+    <div class="mnp-divider"></div>
+
+    {{-- Usuario autenticado o botones de acceso --}}
+    @auth
+        <div class="mnp-section-label">Mi Cuenta</div>
+        <div style="padding: 0 .5rem .5rem;">
+            <div class="mnp-user-info">
+                <div class="mnp-user-name">{{ Auth::user()->name }}</div>
+                <div class="mnp-user-email">{{ Auth::user()->email }}</div>
+            </div>
+        </div>
+        <ul class="mnp-links">
+            <li>
+                <a href="{{ route('dashboard') }}" onclick="closeMobileMenu()">
+                    <i class="fas fa-th-large"></i> Mi Panel
+                </a>
+            </li>
+            <li>
+                <a href="{{ route('dashboard.perfil') }}" onclick="closeMobileMenu()">
+                    <i class="fas fa-user-circle"></i> Mi Perfil
+                </a>
+            </li>
+            <li>
+                <a href="{{ route('dashboard.cursos') }}" onclick="closeMobileMenu()">
+                    <i class="fas fa-book-open"></i> Mis Cursos
+                </a>
+            </li>
+            <li>
+                <a href="{{ route('dashboard.certificados') }}" onclick="closeMobileMenu()">
+                    <i class="fas fa-certificate"></i> Certificados
+                </a>
+            </li>
+            @if(Auth::user()->isAdmin())
+            <li>
+                <a href="{{ route('admin.dashboard') }}" onclick="closeMobileMenu()">
+                    <i class="fas fa-shield-alt"></i> Panel Admin
+                </a>
+            </li>
+            @endif
+        </ul>
+        <div class="mnp-divider"></div>
+        <div style="padding: .5rem;">
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button type="submit" style="width:100%;display:flex;align-items:center;justify-content:center;gap:.5rem;padding:.75rem;background:none;border:1.5px solid #fee2e2;border-radius:8px;color:#dc2626;font-family:'Outfit',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                </button>
+            </form>
+        </div>
+    @else
+        <div class="mnp-auth-btns">
+            <a href="{{ route('login') }}" class="btn-nav-ghost" onclick="closeMobileMenu()">
+                <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+            </a>
+            <a href="{{ route('register') }}" class="btn-nav-primary" onclick="closeMobileMenu()">
+                <i class="fas fa-user-plus"></i> Registrarse
+            </a>
+        </div>
+    @endauth
+
+</div>
+
 <script>
 function toggleUserMenu() {
     document.getElementById('userMenu').classList.toggle('open');
@@ -283,23 +482,33 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// Mobile menu
+function openMobileMenu() {
+    document.getElementById('mobileNavPanel').classList.add('open');
+    document.getElementById('mobileOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    const icon = document.querySelector('#mobileMenuToggle i');
+    if (icon) { icon.classList.remove('fa-bars'); icon.classList.add('fa-times'); }
+}
+
+function closeMobileMenu() {
+    document.getElementById('mobileNavPanel').classList.remove('open');
+    document.getElementById('mobileOverlay').classList.remove('open');
+    document.body.style.overflow = '';
+    const icon = document.querySelector('#mobileMenuToggle i');
+    if (icon) { icon.classList.remove('fa-times'); icon.classList.add('fa-bars'); }
+}
+
 document.getElementById('mobileMenuToggle')?.addEventListener('click', function() {
-    const menu = document.getElementById('navMenu');
-    if (menu.style.display === 'flex') {
-        menu.style.display = 'none';
+    const panel = document.getElementById('mobileNavPanel');
+    if (panel.classList.contains('open')) {
+        closeMobileMenu();
     } else {
-        menu.style.display = 'flex';
-        menu.style.flexDirection = 'column';
-        menu.style.position = 'absolute';
-        menu.style.top = '68px';
-        menu.style.left = '0';
-        menu.style.right = '0';
-        menu.style.background = '#fff';
-        menu.style.padding = '1rem';
-        menu.style.borderBottom = '1px solid #dde4ee';
-        menu.style.boxShadow = '0 8px 24px rgba(0,0,0,.08)';
-        menu.style.zIndex = '999';
+        openMobileMenu();
     }
+});
+
+// Cerrar con tecla Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeMobileMenu();
 });
 </script>
