@@ -12,9 +12,9 @@
 .nav-container {
     max-width: 1200px; margin: 0 auto;
     padding: 0 1.5rem;
-    height: 80px;
+    height: 68px; /* ← bajado de 80px para que el logo quepa */
     display: flex; align-items: center; justify-content: space-between;
-    gap: 1.5rem;
+    gap: 1rem;
 }
 
 /* ── LOGO ── */
@@ -23,7 +23,8 @@
     text-decoration: none; flex-shrink: 0;
 }
 .logo-img {
-    height: 120px; width: auto;
+    height: 52px; /* ← antes era 120px — demasiado grande */
+    width: auto;
     object-fit: contain;
     display: block;
 }
@@ -150,7 +151,8 @@
 
 /* ── MOBILE TOGGLE ── */
 .mobile-menu-toggle {
-    display: none; background: none; border: 1.5px solid #dde4ee;
+    display: none; /* se muestra con media query */
+    background: none; border: 1.5px solid #dde4ee;
     border-radius: 8px; width: 40px; height: 40px;
     align-items: center; justify-content: center;
     color: #334155; cursor: pointer; transition: all .18s;
@@ -228,7 +230,7 @@
 }
 .mnp-divider { height: 1px; background: #f1f5f9; margin: .5rem 1.1rem; }
 
-/* Acciones autenticado / invitado en panel */
+/* Usuario autenticado en panel */
 .mnp-user-info {
     margin: .5rem; padding: .8rem 1rem;
     background: linear-gradient(135deg, #f0f7ff, #e8f2ff);
@@ -250,14 +252,15 @@
 /* ── MEDIA QUERIES ── */
 @media (max-width: 860px) {
     .nav-menu { display: none; }
-    .mobile-menu-toggle { display: flex; }
+    .mobile-menu-toggle { display: flex; } /* ← muestra el botón hamburger */
     .nav-actions .btn-nav-ghost { display: none; }
     .nav-actions .btn-nav-primary { display: none; }
     .nav-actions .user-dropdown { display: none; }
 }
 @media (max-width: 480px) {
     .logo-text { display: none; }
-    .nav-container { padding: 0 1rem; height: 68px; }
+    .nav-container { padding: 0 1rem; height: 60px; }
+    .logo-img { height: 44px; }
 }
 
 /* Padding compensación header fijo */
@@ -265,7 +268,6 @@ body > section:first-child,
 body > div:first-child,
 .hero-section { padding-top: 68px; }
 
-/* Para la página de inicio el hero ya ocupa todo el viewport */
 .hero-section { padding-top: 0; margin-top: 68px; }
 </style>
 

@@ -9,14 +9,15 @@ Plataforma web de formación y capacitación para organizaciones de acción comu
 1. [Descripción general](#descripción-general)
 2. [Tecnologías utilizadas](#tecnologías-utilizadas)
 3. [Requisitos previos](#requisitos-previos)
-4. [Instalación y configuración](#instalación-y-configuración)
+4. [Instalación local](#instalación-local)
 5. [Variables de entorno](#variables-de-entorno)
 6. [Estructura del proyecto](#estructura-del-proyecto)
 7. [Módulos principales](#módulos-principales)
 8. [Roles y permisos](#roles-y-permisos)
 9. [Base de datos](#base-de-datos)
-10. [Comandos útiles](#comandos-útiles)
-11. [Autor](#autor)
+10. [Despliegue en Railway](#despliegue-en-railway)
+11. [Comandos útiles](#comandos-útiles)
+12. [Autor](#autor)
 
 ---
 
@@ -24,13 +25,15 @@ Plataforma web de formación y capacitación para organizaciones de acción comu
 
 **Comunal Aprende** es una aplicación web desarrollada con Laravel 12 orientada a la capacitación de integrantes de organismos de acción comunal (OAC) en Colombia. La plataforma ofrece:
 
-- Catálogo de cursos organizados por módulos y lecciones
-- Reproductor de contenido (texto enriquecido con imágenes, video de YouTube/Vimeo o video propio, PDF)
+- Catálogo de cursos organizados por módulos y lecciones con diseño responsive
+- Reproductor de contenido (texto enriquecido con imágenes vía TinyMCE, video de YouTube/Vimeo o video propio, PDF)
 - Sistema de evaluaciones (quizzes) con múltiples tipos de pregunta
-- Seguimiento de progreso por lección y curso
-- Generación y descarga de certificados en PDF con código QR de verificación
-- Panel de administración para gestión de cursos, módulos, lecciones y quizzes
+- Seguimiento de progreso por lección con orden secuencial obligatorio y tiempo mínimo de lectura
+- Generación y descarga de certificados en PDF con código QR de verificación pública
+- Panel de administración completo para gestión de contenido
 - Autenticación con registro, login y recuperación de contraseña en español (Laravel Breeze)
+- Almacenamiento de imágenes, videos y archivos en Cloudinary
+- Despliegue en Railway con base de datos MySQL
 
 ---
 
@@ -45,24 +48,24 @@ Plataforma web de formación y capacitación para organizaciones de acción comu
 | Editor de texto enriquecido | TinyMCE | 7.x (CDN) |
 | Generación de PDF | Spatie Browsershot + Puppeteer | Browsershot 5.x |
 | Código QR | SimpleSoftwareIO/simple-qrcode | 4.x |
+| Almacenamiento de archivos | Cloudinary | cloudinary-laravel 2.x |
 | Autenticación | Laravel Breeze | 2.x |
 | Testing | PestPHP | 3.x |
+| Despliegue | Railway | — |
 
 ---
 
 ## Requisitos previos
 
-Antes de instalar el proyecto, asegúrate de tener:
-
-- **PHP** >= 8.2 con extensiones: `pdo_mysql`, `mbstring`, `openssl`, `tokenizer`, `xml`, `ctype`, `json`
+- **PHP** >= 8.2 con extensiones: `pdo_mysql`, `mbstring`, `openssl`, `tokenizer`, `xml`, `ctype`, `json`, `gd`, `curl`, `zip`
 - **Composer** >= 2.x
 - **Node.js** >= 18.x y **npm**
-- **MySQL** 8.x corriendo en el puerto configurado (por defecto `3307` en este proyecto)
-- **Puppeteer** instalado vía npm (necesario para generación de certificados PDF)
+- **MySQL** 8.x
+- **Cuenta en Cloudinary** (plan gratuito suficiente para desarrollo)
 
 ---
 
-## Instalación y configuración
+## Instalación local
 
 ### 1. Clonar el repositorio
 
@@ -83,7 +86,7 @@ composer install
 npm install
 ```
 
-> Esto también instala **Puppeteer**, que descarga Chromium automáticamente (~150 MB). Es necesario para la generación de certificados en PDF.
+> Esto también instala **Puppeteer** (~150 MB de Chromium) para generación de certificados PDF.
 
 ### 4. Configurar el entorno
 
@@ -92,79 +95,75 @@ cp .env.example .env
 php artisan key:generate
 ```
 
-Edita el archivo `.env` con tus credenciales de base de datos y correo (ver sección [Variables de entorno](#variables-de-entorno)).
+Edita `.env` con tus credenciales (ver sección [Variables de entorno](#variables-de-entorno)).
 
-### 5. Crear la base de datos y ejecutar migraciones
+### 5. Migraciones y enlace de storage
 
 ```bash
 php artisan migrate
-```
-
-### 6. Crear el enlace simbólico de storage
-
-```bash
 php artisan storage:link
 ```
 
-> Necesario para que los archivos subidos (imágenes de lecciones, videos propios, PDFs, certificados) sean accesibles desde el navegador.
-
-### 7. Compilar assets
+### 6. Compilar assets
 
 ```bash
-# Desarrollo (con hot reload)
-npm run dev
-
-# Producción
-npm run build
+npm run dev      # desarrollo con hot reload
+npm run build    # producción
 ```
 
-### 8. Levantar el servidor de desarrollo
+### 7. Levantar el servidor
 
 ```bash
 php artisan serve
-```
-
-O usando el script combinado que levanta todo a la vez:
-
-```bash
+# o todo junto:
 composer run dev
 ```
 
-La aplicación estará disponible en `http://127.0.0.1:8000`.
+### 8. Crear el primer administrador
+
+```bash
+php artisan crear:admin
+```
 
 ---
 
 ## Variables de entorno
 
-Configura el archivo `.env` con los siguientes valores clave:
-
 ```env
 APP_NAME="Comunal Aprende"
 APP_ENV=local
-APP_KEY=             # Se genera con php artisan key:generate
+APP_KEY=             # php artisan key:generate
+APP_DEBUG=true
 APP_URL=http://127.0.0.1:8000
 
-# Base de datos MySQL
+# Base de datos
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
-DB_PORT=3307          # Puerto personalizado del proyecto
+DB_PORT=3307
 DB_DATABASE=comunal_aprende
 DB_USERNAME=root
 DB_PASSWORD=
 
-# Correo (SMTP Gmail)
+# Cloudinary
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+
+# Correo SMTP
 MAIL_MAILER=smtp
 MAIL_HOST=smtp.gmail.com
 MAIL_PORT=587
-MAIL_USERNAME=tu-correo@gmail.com
-MAIL_PASSWORD=tu-app-password
 MAIL_ENCRYPTION=tls
-MAIL_FROM_ADDRESS=tu-correo@gmail.com
+MAIL_USERNAME=
+MAIL_PASSWORD=
+MAIL_FROM_ADDRESS=
 MAIL_FROM_NAME="Comunal Aprende"
 
 # Sesiones y caché
 SESSION_DRIVER=database
 CACHE_STORE=database
+QUEUE_CONNECTION=database
+FILESYSTEM_DISK=local
 ```
 
 ---
@@ -174,65 +173,41 @@ CACHE_STORE=database
 ```
 proyecto/
 ├── app/
-│   ├── Http/
-│   │   ├── Controllers/
-│   │   │   ├── Admin/               # Controladores del panel admin
-│   │   │   │   ├── AdminCursosController.php
-│   │   │   │   ├── AdminDashboardController.php
-│   │   │   │   ├── AdminLeccionesController.php
-│   │   │   │   ├── AdminModulosController.php
-│   │   │   │   └── AdminQuizController.php
-│   │   │   ├── Auth/                # Controladores de autenticación (Breeze)
-│   │   │   ├── CertificadoController.php
-│   │   │   ├── CursoPlayerController.php
-│   │   │   ├── CursosController.php
-│   │   │   ├── DashboardController.php
-│   │   │   ├── PaginasController.php
-│   │   │   ├── ProfileController.php
-│   │   │   └── QuizController.php
-│   │   └── Middleware/
-│   │       └── EsAdmin.php
-│   ├── Models/
-│   │   ├── User.php
-│   │   ├── Curso.php
-│   │   ├── Modulo.php
-│   │   ├── Leccion.php
-│   │   ├── ProgresoLeccion.php
-│   │   ├── Quiz.php, QuizPregunta.php, QuizOpcion.php
-│   │   ├── QuizIntento.php, QuizRespuesta.php
-│   │   └── Certificado.php
+│   ├── Http/Controllers/
+│   │   ├── Admin/                   # CRUD de contenido (cursos, módulos, lecciones, quiz)
+│   │   ├── Auth/                    # Autenticación Breeze
+│   │   ├── CertificadoController.php
+│   │   ├── CursoPlayerController.php
+│   │   ├── CursosController.php
+│   │   ├── DashboardController.php
+│   │   ├── PaginasController.php
+│   │   └── QuizController.php
+│   ├── Http/Middleware/
+│   │   └── EsAdmin.php
+│   ├── Models/                      # Eloquent ORM
 │   ├── Notifications/
-│   │   └── ResetPasswordNotification.php  # Correo de reset en español
-│   └── Providers/
-├── database/
-│   ├── migrations/
-│   └── seeders/
-├── resources/
-│   ├── css/
-│   ├── js/
-│   └── views/
-│       ├── admin/                   # Vistas del panel administrador
-│       ├── auth/
-│       │   ├── reset-password-email.blade.php  # Plantilla del correo de reset
-│       │   └── ...                  # Demás vistas de auth
-│       ├── certificados/
-│       ├── cursos/
-│       ├── layouts/
-│       ├── partials/
-│       └── quiz/
-├── public/
-│   ├── images/
-│   └── storage -> ../storage/app/public  # Enlace simbólico
-├── storage/
-│   └── app/public/
-│       ├── lecciones/               # PDFs subidos
-│       │   ├── imagenes/            # Imágenes insertadas en editor TinyMCE
-│       │   └── videos/              # Videos propios subidos por el admin
-│       └── certificados/
+│   │   └── ResetPasswordNotification.php  # Reset password en español
+│   └── Services/
+│       └── CloudinaryService.php    # Subida/eliminación de archivos
+├── bootstrap/
+│   └── app.php                      # trustProxies para Railway HTTPS
+├── config/
+│   └── cloudinary.php
+├── database/migrations/
+├── resources/views/
+│   ├── admin/
+│   ├── auth/
+│   │   └── reset-password-email.blade.php
+│   ├── certificados/
+│   ├── cursos/
+│   ├── layouts/
+│   ├── partials/
+│   │   └── header.blade.php         # Navbar responsive con panel móvil deslizable
+│   └── quiz/
 ├── .env.example
+├── railway.toml                     # Configuración de despliegue Railway
+├── nixpacks.toml                    # Build: PHP 8.3 + Node 20 + Chromium
 ├── composer.json
-├── package.json
-├── tailwind.config.js
 └── vite.config.js
 ```
 
@@ -241,38 +216,32 @@ proyecto/
 ## Módulos principales
 
 ### Catálogo de cursos
-Los cursos se organizan en **categorías** (Gestión Comunal, Normatividad, Liderazgo, Formulación de Proyectos, Participación Ciudadana, Contabilidad) y se componen de módulos y lecciones.
-
-### Reproductor de curso
-Permite navegar entre lecciones y marcar cada una como completada. El sistema calcula el porcentaje de avance automáticamente.
+Cursos con categorías, módulos y lecciones. Diseño responsive en desktop y móvil.
 
 ### Tipos de contenido en lecciones
 
 | Tipo | Descripción |
 |---|---|
-| Texto | Editor TinyMCE con soporte de imágenes, tablas, listas y formato enriquecido |
-| Video | URL de YouTube/Vimeo embebido, o archivo de video propio (MP4, MOV, WEBM) subido al servidor |
-| PDF | Archivo subido y visualizado en iframe |
-| Quiz | Evaluación con preguntas configurables |
+| Texto | Editor TinyMCE con imágenes (guardadas en Cloudinary) |
+| Video | URL de YouTube/Vimeo o archivo propio subido (guardado en Cloudinary) |
+| PDF | Archivo subido (guardado en Cloudinary) y visualizado en iframe |
+| Quiz | Evaluación configurable con múltiples tipos de pregunta |
 | Tarea | Instrucciones en texto enriquecido |
 
-#### Editor de texto con imágenes (TinyMCE)
-Al crear o editar una lección de tipo texto, el campo de contenido usa TinyMCE. El admin puede insertar imágenes directamente desde el editor — las imágenes se suben automáticamente al servidor y se almacenan en `storage/app/public/lecciones/imagenes/`. La ruta de subida es `POST /admin/lecciones/upload-imagen`.
-
-#### Videos propios
-Al seleccionar tipo Video, el admin puede elegir entre pegar una URL de YouTube/Vimeo o subir un archivo de video directamente. Los videos se guardan en `storage/app/public/lecciones/videos/` y se reproducen con el reproductor nativo HTML5 en el player del estudiante.
-
-### Sistema de quizzes
-Configuración por lección con intentos, tiempo límite y puntaje aprobatorio. Tipos de pregunta: opción múltiple, múltiple respuesta, verdadero/falso y texto libre.
+### Progreso secuencial
+Las lecciones deben completarse **en orden** — no se puede iniciar la lección N+1 sin completar la N. Si un usuario intenta interactuar con una lección bloqueada, aparece un modal informativo. Las lecciones teóricas (texto/tarea) requieren un mínimo de **5 minutos** de tiempo activo antes de poder marcarse como completadas.
 
 ### Certificados
-Al completar un curso al 100% el usuario puede descargar un certificado en PDF generado con Spatie Browsershot. Cada certificado tiene un código QR con URL pública de verificación.
+Al completar un curso al 100% se genera un certificado PDF con diseño personalizado, código QR y URL pública de verificación. Generado con Spatie Browsershot (Chromium).
 
-### Correo de recuperación de contraseña
-Completamente en español con diseño personalizado de Comunal Aprende. La notificación personalizada está en `app/Notifications/ResetPasswordNotification.php` y la plantilla del correo en `resources/views/auth/reset-password-email.blade.php`.
+### Correo de recuperación
+Email completamente en español con diseño de marca, compatible con Gmail (CSS inline, sin gradientes ni flexbox).
 
-### Panel de administración
-Accesible desde `/admin` para usuarios con rol `admin`. Gestión completa de cursos, módulos, lecciones (con editor TinyMCE y subida de videos), quizzes y estudiantes.
+### Almacenamiento en Cloudinary
+Todos los archivos subidos (imágenes de cursos, avatares, imágenes del editor TinyMCE, videos propios, PDFs) se guardan en Cloudinary. La base de datos solo almacena las URLs.
+
+### Navegación responsive
+El header incluye un **panel deslizable desde la derecha** en móvil (hamburger menu) con logo, links de navegación, información del usuario autenticado y botones de acción.
 
 ---
 
@@ -283,8 +252,6 @@ Accesible desde `/admin` para usuarios con rol `admin`. Gestión completa de cur
 | `student` | Catálogo, inscripción, reproductor, quizzes, dashboard personal, certificados |
 | `admin` | Todo lo anterior + panel `/admin` completo |
 
-El middleware `EsAdmin` protege todas las rutas del panel de administración.
-
 ---
 
 ## Base de datos
@@ -292,49 +259,89 @@ El middleware `EsAdmin` protege todas las rutas del panel de administración.
 | Tabla | Descripción |
 |---|---|
 | `users` | Usuarios con datos personales, ubicación y rol |
-| `cursos` | Cursos con categoría, tipo (free/paid), duración e imagen |
+| `cursos` | Cursos con categoría, tipo, duración e imagen (URL Cloudinary) |
 | `inscripciones` | Tabla pivote usuario-curso con progreso y estado |
-| `modulos` | Módulos agrupadores de lecciones |
-| `lecciones` | Contenido individual (texto, video, PDF, quiz). Incluye `video_local` para videos subidos al servidor |
-| `progreso_lecciones` | Progreso por usuario y lección |
-| `quizzes` | Configuración de evaluación |
-| `quiz_preguntas` | Preguntas de cada quiz |
+| `modulos` | Agrupadores de lecciones |
+| `lecciones` | Contenido con campo `video_local` (public_id Cloudinary para videos propios) |
+| `progreso_lecciones` | Progreso y tiempo visto por usuario y lección |
+| `quizzes` | Configuración de evaluaciones |
+| `quiz_preguntas` | Preguntas por quiz |
 | `quiz_opciones` | Opciones de respuesta |
-| `quiz_intentos` | Registro de intentos |
+| `quiz_intentos` | Intentos por usuario |
 | `quiz_respuestas` | Respuestas por intento |
-| `quiz_respuesta_opciones` | Pivote respuesta-opción |
-| `certificados` | Certificados con código único |
+| `quiz_respuesta_opciones` | Pivote respuesta-opción (múltiple respuesta) |
+| `certificados` | Certificados emitidos con código único |
+
+---
+
+## Despliegue en Railway
+
+El proyecto está configurado para desplegarse en [Railway](https://railway.app) con MySQL como base de datos.
+
+### Archivos de configuración
+
+- **`railway.toml`** — healthcheck en `/up`, sin startCommand (lo maneja nixpacks)
+- **`nixpacks.toml`** — instala PHP 8.3, Node 20, Chromium y todas las extensiones necesarias
+
+### Variables de entorno en Railway
+
+Además de las variables locales, en producción agregar:
+
+```
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://tu-app.up.railway.app
+ASSET_URL=https://tu-app.up.railway.app
+DB_HOST=${{MySQL.MYSQLHOST}}
+DB_PORT=${{MySQL.MYSQLPORT}}
+DB_DATABASE=${{MySQL.MYSQLDATABASE}}
+DB_USERNAME=${{MySQL.MYSQLUSER}}
+DB_PASSWORD=${{MySQL.MYSQLPASSWORD}}
+PUPPETEER_EXECUTABLE_PATH=/run/current-system/sw/bin/chromium
+```
+
+### Crear administrador en producción
+
+Desde la terminal con Railway CLI vinculado al proyecto:
+
+```bash
+railway run php artisan crear:admin
+```
+
+> Nota: este comando requiere acceso a la base de datos. Usa el host público de MySQL (disponible en la variable `MYSQL_PUBLIC_URL` del servicio MySQL en Railway), no el host interno.
 
 ---
 
 ## Comandos útiles
 
 ```bash
-# Levantar entorno completo
+# Levantar entorno completo (servidor + queue + logs + vite)
 composer run dev
 
-# Crear enlace simbólico de storage (solo primera vez)
+# Crear enlace simbólico de storage (primera vez)
 php artisan storage:link
 
-# Ejecutar migraciones pendientes
+# Migraciones
 php artisan migrate
+php artisan migrate:fresh    # recrear desde cero
 
-# Agregar una nueva columna a una tabla existente
+# Agregar columna a tabla existente
 php artisan make:migration add_columna_to_tabla --table=nombre_tabla
+
+# Crear administrador
+php artisan crear:admin
 
 # Limpiar cachés
 php artisan config:clear
 php artisan route:clear
+php artisan view:clear
 php artisan cache:clear
 
-# Recrear base de datos desde cero
-php artisan migrate:fresh
-
-# Ejecutar pruebas
-composer run test
-
-# Compilar assets para producción
+# Compilar assets
 npm run build
+
+# Pruebas
+composer run test
 ```
 
 ---
