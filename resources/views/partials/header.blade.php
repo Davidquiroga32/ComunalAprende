@@ -218,9 +218,9 @@
     .mobile-menu-toggle     { display: flex !important; }
 }
 @media (max-width: 480px) {
-    .nav-container { padding: 0 .9rem; height: 62px; }
-    .logo-img      { height: 48px; }
-    .logo-text     { display: none; }
+    .nav-container { padding: 0 .9rem; height: 66px; }
+    .logo-img      { height: 58px; }
+    .logo-text     { display: flex; }
 }
 
 /* Compensar header fijo */
