@@ -6,9 +6,9 @@
     <title>@yield('title', 'Comunal Aprende - Formación y Capacitación Comunitaria')</title>
 
     {{-- FAVICON --}}
-    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
-    <link rel="shortcut icon" href="{{ asset('images/logo.png') }}">
-    
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon.ico') }}">
+
     <meta name="description" content="@yield('description', 'Fortaleciendo comunidades a través de la educación, la asesoría y el acompañamiento profesional.')">
 
     <meta name="csrf-token" content="{{ csrf_token() }}">
