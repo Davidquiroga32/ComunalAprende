@@ -32,7 +32,7 @@
     }
 
     .ca-logo {
-        height: 70px;
+        height: 110px;
         width: auto;
         object-fit: contain;
         margin-bottom: 10px;
