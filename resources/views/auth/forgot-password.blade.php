@@ -2,190 +2,177 @@
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500&display=swap');
 
-    .auth-wrapper {
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    .ca-page {
         min-height: 100vh;
         display: flex;
         align-items: center;
         justify-content: center;
         background: linear-gradient(135deg, #071D36 0%, #0A4D8C 60%, #1E6DB8 100%);
-        padding: 24px 16px;
+        padding: 20px 16px;
         font-family: 'Inter', sans-serif;
     }
 
-    .auth-card {
+    .ca-card {
         width: 100%;
-        max-width: 440px;
+        max-width: 400px;
         background: #ffffff;
-        border-radius: 20px;
+        border-radius: 18px;
         overflow: hidden;
-        box-shadow: 0 24px 64px rgba(7, 29, 54, 0.4);
+        box-shadow: 0 20px 60px rgba(7, 29, 54, 0.45);
     }
 
-    .auth-header {
+    /* HEADER */
+    .ca-header {
         background: linear-gradient(135deg, #071D36 0%, #0A4D8C 100%);
-        padding: 36px 40px 28px;
+        padding: 24px 32px 20px;
         text-align: center;
         border-bottom: 3px solid #C9A84C;
     }
 
-    .auth-logo {
-        height: 80px;
+    .ca-logo {
+        height: 70px;
         width: auto;
         object-fit: contain;
-        margin-bottom: 16px;
-        filter: brightness(0) invert(1);
+        margin-bottom: 10px;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
     }
 
-    .auth-logo-fallback {
-        width: 64px;
-        height: 64px;
-        background: rgba(201, 168, 76, 0.15);
-        border: 2px solid #C9A84C;
-        border-radius: 14px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto 16px;
-        font-size: 28px;
-    }
-
-    .auth-brand {
+    .ca-brand {
         font-family: 'Poppins', sans-serif;
-        font-size: 20px;
+        font-size: 18px;
         font-weight: 700;
         color: #ffffff;
-        letter-spacing: 0.3px;
     }
 
-    .auth-tagline {
-        font-size: 11px;
+    .ca-tagline {
+        font-size: 10px;
         color: rgba(255,255,255,0.45);
         text-transform: uppercase;
         letter-spacing: 2px;
-        margin-top: 4px;
+        margin-top: 3px;
     }
 
-    .auth-body {
-        padding: 36px 40px 40px;
+    /* BODY */
+    .ca-body {
+        padding: 28px 32px 24px;
     }
 
-    .auth-icon-wrap {
-        width: 64px;
-        height: 64px;
+    .ca-icon {
+        width: 54px;
+        height: 54px;
         background: #EBF3FF;
         border: 2px solid #c5d9f0;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        margin: 0 auto 20px;
-        font-size: 26px;
+        margin: 0 auto 16px;
+        font-size: 22px;
     }
 
-    .auth-title {
+    .ca-title {
         font-family: 'Poppins', sans-serif;
-        font-size: 22px;
+        font-size: 20px;
         font-weight: 700;
         color: #071D36;
         text-align: center;
-        margin: 0 0 8px;
-    }
-
-    .auth-subtitle {
-        font-size: 14px;
-        color: #64748b;
-        text-align: center;
-        line-height: 1.6;
-        margin: 0 0 28px;
-    }
-
-    .status-msg {
-        background: #f0fdf4;
-        border: 1px solid #86efac;
-        border-radius: 10px;
-        padding: 12px 16px;
-        font-size: 14px;
-        color: #166534;
-        margin-bottom: 20px;
-        text-align: center;
-    }
-
-    .field-label {
-        display: block;
-        font-size: 13px;
-        font-weight: 600;
-        color: #334155;
         margin-bottom: 6px;
     }
 
-    .input-wrap {
-        position: relative;
+    .ca-desc {
+        font-size: 13px;
+        color: #64748b;
+        text-align: center;
+        line-height: 1.6;
+        margin-bottom: 22px;
     }
 
-    .input-icon {
+    .ca-status {
+        background: #f0fdf4;
+        border: 1px solid #86efac;
+        border-radius: 8px;
+        padding: 10px 14px;
+        font-size: 13px;
+        color: #166534;
+        margin-bottom: 18px;
+        text-align: center;
+    }
+
+    .ca-label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        color: #334155;
+        margin-bottom: 5px;
+    }
+
+    .ca-input-wrap { position: relative; }
+
+    .ca-input-icon {
         position: absolute;
-        left: 14px;
+        left: 12px;
         top: 50%;
         transform: translateY(-50%);
-        font-size: 16px;
+        font-size: 14px;
         pointer-events: none;
     }
 
-    .auth-input {
+    .ca-input {
         width: 100%;
-        padding: 12px 14px 12px 42px;
+        padding: 11px 12px 11px 38px;
         border: 1.5px solid #e2e8f0;
-        border-radius: 10px;
-        font-size: 15px;
+        border-radius: 9px;
+        font-size: 14px;
         color: #1e293b;
         background: #f8fafc;
         transition: all 0.2s ease;
         outline: none;
-        box-sizing: border-box;
     }
 
-    .auth-input:focus {
+    .ca-input:focus {
         border-color: #0A4D8C;
         background: #ffffff;
         box-shadow: 0 0 0 3px rgba(10, 77, 140, 0.1);
     }
 
-    .auth-input::placeholder { color: #94a3b8; }
+    .ca-input::placeholder { color: #94a3b8; }
 
-    .field-error {
-        font-size: 12px;
+    .ca-error {
+        font-size: 11px;
         color: #dc2626;
-        margin-top: 6px;
+        margin-top: 4px;
     }
 
-    .auth-btn {
+    .ca-btn {
         width: 100%;
-        padding: 14px;
+        padding: 12px;
         background: linear-gradient(135deg, #0A4D8C, #1E6DB8);
         color: #ffffff;
         border: none;
-        border-radius: 10px;
+        border-radius: 9px;
         font-family: 'Poppins', sans-serif;
-        font-size: 15px;
+        font-size: 14px;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.2s ease;
-        margin-top: 24px;
-        letter-spacing: 0.3px;
+        margin-top: 20px;
+        letter-spacing: 0.2px;
     }
 
-    .auth-btn:hover {
+    .ca-btn:hover {
         background: linear-gradient(135deg, #073A6B, #0A4D8C);
-        box-shadow: 0 6px 20px rgba(10, 77, 140, 0.35);
+        box-shadow: 0 6px 18px rgba(10, 77, 140, 0.35);
         transform: translateY(-1px);
     }
 
-    .auth-btn:active { transform: translateY(0); }
-
-    .auth-back {
+    .ca-back {
         display: block;
         text-align: center;
-        margin-top: 20px;
+        margin-top: 16px;
         font-size: 13px;
         color: #0A4D8C;
         text-decoration: none;
@@ -193,64 +180,62 @@
         transition: color 0.2s;
     }
 
-    .auth-back:hover { color: #C9A84C; }
+    .ca-back:hover { color: #C9A84C; }
 
-    .auth-footer {
+    .ca-footer {
         background: #f8fafc;
         border-top: 1px solid #e2e8f0;
-        padding: 14px 40px;
+        padding: 12px 32px;
         text-align: center;
         font-size: 11px;
         color: #94a3b8;
     }
 </style>
 
-<div class="auth-wrapper">
-    <div class="auth-card">
+<div class="ca-page">
+    <div class="ca-card">
 
-        <div class="auth-header">
-            <img src="{{ asset('images/logo.png') }}"
-                 alt="Comunal Aprende"
-                 class="auth-logo"
-                 onerror="this.style.display='none';document.getElementById('logo-fallback').style.display='flex';">
-            <div id="logo-fallback" class="auth-logo-fallback" style="display:none;">🏛️</div>
-            <div class="auth-brand">Comunal Aprende</div>
-            <div class="auth-tagline">Colombia · Formación Comunitaria</div>
+        <div class="ca-header">
+            <img src="{{ asset('images/logo.png') }}" alt="Comunal Aprende" class="ca-logo"
+                 onerror="this.style.display='none'">
+            <div class="ca-brand">Comunal Aprende</div>
+            <div class="ca-tagline">Colombia · Formación Comunitaria</div>
         </div>
 
-        <div class="auth-body">
-            <div class="auth-icon-wrap">🔐</div>
-            <h1 class="auth-title">Recuperar contraseña</h1>
-            <p class="auth-subtitle">
-                Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.
-            </p>
+        <div class="ca-body">
+            <div class="ca-icon">🔐</div>
+            <h1 class="ca-title">Recuperar contraseña</h1>
+            <p class="ca-desc">Ingresa tu correo y te enviaremos un enlace para restablecerla.</p>
 
             @if (session('status'))
-                <div class="status-msg">✅ {{ session('status') }}</div>
+                <div class="ca-status">
+                    ✅ Te hemos enviado el enlace de recuperación. Revisa tu correo.
+                </div>
             @endif
 
             <form method="POST" action="{{ route('password.email') }}">
                 @csrf
                 <div>
-                    <label for="email" class="field-label">Correo electrónico</label>
-                    <div class="input-wrap">
-                        <span class="input-icon">✉️</span>
+                    <label for="email" class="ca-label">Correo electrónico</label>
+                    <div class="ca-input-wrap">
+                        <span class="ca-input-icon">✉️</span>
                         <input id="email" type="email" name="email" value="{{ old('email') }}"
-                            required autofocus placeholder="ejemplo@correo.com" class="auth-input" />
+                               required autofocus placeholder="ejemplo@correo.com" class="ca-input" />
                     </div>
                     @error('email')
-                        <p class="field-error">{{ $message }}</p>
+                        <p class="ca-error">{{ $message }}</p>
                     @enderror
                 </div>
-                <button type="submit" class="auth-btn">
+
+                <button type="submit" class="ca-btn">
                     📨 &nbsp; Enviar enlace de recuperación
                 </button>
             </form>
 
-            <a href="{{ route('login') }}" class="auth-back">← Volver al inicio de sesión</a>
+            <a href="{{ route('login') }}" class="ca-back">← Volver al inicio de sesión</a>
         </div>
 
-        <div class="auth-footer">© {{ date('Y') }} Comunal Aprende · Colombia</div>
+        <div class="ca-footer">© {{ date('Y') }} Comunal Aprende · Colombia</div>
     </div>
 </div>
 </x-guest-layout>
