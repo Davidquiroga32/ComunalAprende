@@ -30,6 +30,7 @@
     background: var(--dark);
     overflow: hidden;
     padding: 0;
+    padding-top: 70px; /* Compensa el header fijo */
 }
 
 .hero-bg-gradient {
