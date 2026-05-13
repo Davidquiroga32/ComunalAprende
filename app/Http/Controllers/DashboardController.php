@@ -5,10 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
-use App\Services\CloudinaryService;
+use App\Services\B2Service;
 use App\Models\ProgresoLeccion;
-
 
 class DashboardController extends Controller
 {
@@ -25,13 +23,16 @@ class DashboardController extends Controller
         $segundosTotales = ProgresoLeccion::where('user_id', $user->id)->sum('tiempo_visto');
         $horasEstudio    = round($segundosTotales / 3600, 1);
 
-        return view('dashboard', compact('user', 'cursosInscritos', 'cursosCompletados', 'certificados', 'horasEstudio'));
+        return view('dashboard', compact(
+            'user', 'cursosInscritos', 'cursosCompletados', 'certificados', 'horasEstudio'
+        ));
     }
 
     /** Formulario de perfil */
     public function editarPerfil()
     {
         $user = Auth::user();
+
         return view('perfil', compact('user'));
     }
 
@@ -58,10 +59,12 @@ class DashboardController extends Controller
         ]);
 
         if ($request->hasFile('avatar')) {
-            $cloudinary = app(CloudinaryService::class);
-            // Borrar avatar anterior
-            $cloudinary->eliminar(CloudinaryService::urlAPublicId($user->avatar ?? ''), 'image');
-            $res = $cloudinary->subir($request->file('avatar'), 'avatars', 'image');
+            $b2 = app(B2Service::class);
+            // Borrar avatar anterior de B2
+            if ($user->avatar) {
+                $b2->eliminar(B2Service::urlAPublicId($user->avatar));
+            }
+            $res          = $b2->subir($request->file('avatar'), 'avatars', 'image');
             $user->avatar = $res['url'];
         }
 
@@ -71,13 +74,13 @@ class DashboardController extends Controller
         $user->municipio                = $request->municipio;
         $user->pertenece_oac            = $request->boolean('pertenece_oac');
         $user->organismo_accion_comunal = $request->boolean('pertenece_oac')
-                                            ? $request->organismo_accion_comunal
-                                            : null;
-        $user->condicion                = $request->condicion;
+            ? $request->organismo_accion_comunal
+            : null;
+        $user->condicion = $request->condicion;
         $user->save();
 
         return redirect()->route('dashboard.perfil')
-                        ->with('success', '¡Perfil actualizado correctamente!');
+            ->with('success', '¡Perfil actualizado correctamente!');
     }
 
     /** Cambiar contraseña */
@@ -102,7 +105,7 @@ class DashboardController extends Controller
         $user->save();
 
         return redirect()->route('dashboard.perfil')
-                        ->with('success', '¡Contraseña actualizada correctamente!');
+            ->with('success', '¡Contraseña actualizada correctamente!');
     }
 
     /** Mis cursos */

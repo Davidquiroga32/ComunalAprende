@@ -1,20 +1,20 @@
 <?php
-// app/Http/Controllers/Admin/AdminLeccionesController.php
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Modulo;
 use App\Models\Leccion;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use App\Services\CloudinaryService;
+use App\Services\B2Service;
 
 class AdminLeccionesController extends Controller
 {
     public function create(Modulo $modulo)
     {
         $curso = $modulo->curso;
-        return view('admin.lecciones.create', compact('modulo','curso'));
+
+        return view('admin.lecciones.create', compact('modulo', 'curso'));
     }
 
     public function store(Request $request, Modulo $modulo)
@@ -26,7 +26,6 @@ class AdminLeccionesController extends Controller
             'video_url'        => 'nullable|url|max:500',
             'archivo'          => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx|max:10240',
             'video_archivo'    => 'nullable|file|mimes:mp4,mov,avi,webm|max:512000',
-            'video_archivo'    => 'nullable|file|mimes:mp4,mov,avi,webm|max:512000', // 500MB
             'duracion_minutos' => 'nullable|integer|min:0',
             'activo'           => 'nullable|boolean',
         ]);
@@ -36,29 +35,30 @@ class AdminLeccionesController extends Controller
         $data['activo']    = $request->boolean('activo', true);
 
         if ($request->hasFile('archivo')) {
-            $cloudinary = app(CloudinaryService::class);
-            $res = $cloudinary->subir($request->file('archivo'), 'lecciones/pdfs', 'raw');
+            $b2  = app(B2Service::class);
+            $res = $b2->subir($request->file('archivo'), 'lecciones/pdfs', 'raw');
             $data['archivo'] = $res['url'];
         }
 
         if ($request->hasFile('video_archivo')) {
-            $cloudinary = app(CloudinaryService::class);
-            $res = $cloudinary->subir($request->file('video_archivo'), 'lecciones/videos', 'video');
+            $b2  = app(B2Service::class);
+            $res = $b2->subir($request->file('video_archivo'), 'lecciones/videos', 'video');
             $data['video_url']   = $res['url'];
-            $data['video_local'] = $res['public_id']; // guardamos public_id para borrar después
+            $data['video_local'] = $res['public_id'];
         }
 
         Leccion::create($data);
 
         return redirect()->route('admin.cursos.show', $modulo->curso)
-                        ->with('success', 'Lección creada correctamente.');
+            ->with('success', 'Lección creada correctamente.');
     }
 
     public function edit(Leccion $leccion)
     {
         $modulo = $leccion->modulo;
         $curso  = $modulo->curso;
-        return view('admin.lecciones.edit', compact('leccion','modulo','curso'));
+
+        return view('admin.lecciones.edit', compact('leccion', 'modulo', 'curso'));
     }
 
     public function update(Request $request, Leccion $leccion)
@@ -77,16 +77,18 @@ class AdminLeccionesController extends Controller
         $data['activo'] = $request->boolean('activo');
 
         if ($request->hasFile('archivo')) {
-            $cloudinary = app(CloudinaryService::class);
-            $cloudinary->eliminar(CloudinaryService::urlAPublicId($leccion->archivo ?? ''), 'raw');
-            $res = $cloudinary->subir($request->file('archivo'), 'lecciones/pdfs', 'raw');
+            $b2 = app(B2Service::class);
+            $b2->eliminar(B2Service::urlAPublicId($leccion->archivo ?? ''));
+            $res = $b2->subir($request->file('archivo'), 'lecciones/pdfs', 'raw');
             $data['archivo'] = $res['url'];
         }
 
         if ($request->hasFile('video_archivo')) {
-            $cloudinary = app(CloudinaryService::class);
-            if ($leccion->video_local) $cloudinary->eliminar($leccion->video_local, 'video');
-            $res = $cloudinary->subir($request->file('video_archivo'), 'lecciones/videos', 'video');
+            $b2 = app(B2Service::class);
+            if ($leccion->video_local) {
+                $b2->eliminar($leccion->video_local);
+            }
+            $res = $b2->subir($request->file('video_archivo'), 'lecciones/videos', 'video');
             $data['video_url']   = $res['url'];
             $data['video_local'] = $res['public_id'];
         }
@@ -94,19 +96,25 @@ class AdminLeccionesController extends Controller
         $leccion->update($data);
 
         return redirect()->route('admin.cursos.show', $leccion->modulo->curso)
-                        ->with('success', 'Lección actualizada correctamente.');
+            ->with('success', 'Lección actualizada correctamente.');
     }
 
     public function destroy(Leccion $leccion)
     {
         $curso = $leccion->modulo->curso;
-        $cloudinary = app(CloudinaryService::class);
-        if ($leccion->archivo)     $cloudinary->eliminar(CloudinaryService::urlAPublicId($leccion->archivo), 'raw');
-        if ($leccion->video_local) $cloudinary->eliminar($leccion->video_local, 'video');
+        $b2    = app(B2Service::class);
+
+        if ($leccion->archivo) {
+            $b2->eliminar(B2Service::urlAPublicId($leccion->archivo));
+        }
+        if ($leccion->video_local) {
+            $b2->eliminar($leccion->video_local);
+        }
+
         $leccion->delete();
 
         return redirect()->route('admin.cursos.show', $curso)
-                        ->with('success', 'Lección eliminada.');
+            ->with('success', 'Lección eliminada.');
     }
 
     /**
@@ -119,8 +127,8 @@ class AdminLeccionesController extends Controller
             'file' => 'required|image|mimes:jpg,jpeg,png,gif,webp|max:4096',
         ]);
 
-        $cloudinary = app(CloudinaryService::class);
-        $resultado  = $cloudinary->subir($request->file('file'), 'lecciones/imagenes', 'image');
+        $b2        = app(B2Service::class);
+        $resultado = $b2->subir($request->file('file'), 'lecciones/imagenes', 'image');
 
         return response()->json([
             'location' => $resultado['url'],
