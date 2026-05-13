@@ -6,8 +6,6 @@ use App\Models\Curso;
 use App\Models\Leccion;
 use App\Models\User;
 use App\Services\B2Service;
-use Cloudinary\Cloudinary;
-use Cloudinary\Configuration\Configuration;
 use Illuminate\Console\Command;
 
 class MigrarCloudinaryAB2 extends Command
@@ -16,10 +14,11 @@ class MigrarCloudinaryAB2 extends Command
     protected $description = 'Migra los archivos de Comunal Aprende desde Cloudinary a Backblaze B2';
 
     private B2Service $b2;
-    private Cloudinary $cloudinary;
     private bool $dryRun = false;
+    private int $exitados = 0;
+    private int $fallidos = 0;
 
-    public function handle(): void
+    public function handle(): int
     {
         $this->dryRun = $this->option('dry-run');
 
@@ -29,28 +28,22 @@ class MigrarCloudinaryAB2 extends Command
 
         $this->b2 = app(B2Service::class);
 
-        $this->cloudinary = new Cloudinary(
-            Configuration::instance([
-                'cloud' => [
-                    'cloud_name' => config('cloudinary.cloud_name'),
-                    'api_key'    => config('cloudinary.api_key'),
-                    'api_secret' => config('cloudinary.api_secret'),
-                ],
-                'url' => ['secure' => true],
-            ])
-        );
-
         $this->info('');
         $this->info('════════════════════════════════════════════════════');
         $this->info('   Migración Cloudinary → Backblaze B2');
         $this->info('════════════════════════════════════════════════════');
+        $this->info('');
 
         $this->migrarImagenesCursos();
         $this->migrarLecciones();
         $this->migrarAvatares();
 
         $this->info('');
-        $this->info('✅ Migración completada.');
+        $this->info("✅ Migración completada. Exitosos: {$this->exitados} | Fallidos: {$this->fallidos}");
+
+        return $this->fallidos > 0
+            ? self::FAILURE
+            : self::SUCCESS;
     }
 
     // ─────────────────────────────────────────────────
@@ -58,7 +51,6 @@ class MigrarCloudinaryAB2 extends Command
     // ─────────────────────────────────────────────────
     private function migrarImagenesCursos(): void
     {
-        $this->info('');
         $this->info('📁 Migrando imágenes de cursos...');
 
         $cursos = Curso::whereNotNull('imagen')
@@ -72,7 +64,6 @@ class MigrarCloudinaryAB2 extends Command
 
         foreach ($cursos as $curso) {
             $this->line("   → Curso #{$curso->id}: {$curso->titulo}");
-            $this->line("     URL original: {$curso->imagen}");
 
             try {
                 $nuevaUrl = $this->descargarYSubir(
@@ -80,15 +71,17 @@ class MigrarCloudinaryAB2 extends Command
                     "comunalaprende/cursos/{$curso->id}_portada"
                 );
 
-                $this->line("     URL nueva:    {$nuevaUrl}");
+                $this->line("     URL nueva: {$nuevaUrl}");
 
-                if (!$this->dryRun) {
+                if (! $this->dryRun) {
                     $curso->update(['imagen' => $nuevaUrl]);
                 }
 
-                $this->info("     ✓ OK");
+                $this->info('     ✓ OK');
+                $this->exitados++;
             } catch (\Throwable $e) {
                 $this->error("     ✗ Error: " . $e->getMessage());
+                $this->fallidos++;
             }
         }
     }
@@ -118,17 +111,19 @@ class MigrarCloudinaryAB2 extends Command
 
                 $this->line("     URL nueva: {$nuevaUrl}");
 
-                if (!$this->dryRun) {
+                if (! $this->dryRun) {
                     $leccion->update(['archivo' => $nuevaUrl]);
                 }
 
-                $this->info("     ✓ OK");
+                $this->info('     ✓ OK');
+                $this->exitados++;
             } catch (\Throwable $e) {
                 $this->error("     ✗ Error: " . $e->getMessage());
+                $this->fallidos++;
             }
         }
 
-        // Videos propios (video_local = public_id de Cloudinary)
+        // Videos propios (video_local = public_id en Cloudinary)
         $leccionesVideo = Leccion::whereNotNull('video_local')
             ->whereNotNull('video_url')
             ->where('video_url', 'like', '%cloudinary.com%')
@@ -144,16 +139,18 @@ class MigrarCloudinaryAB2 extends Command
 
                 $this->line("     URL nueva: {$nuevaUrl}");
 
-                if (!$this->dryRun) {
+                if (! $this->dryRun) {
                     $leccion->update([
                         'video_url'   => $nuevaUrl,
                         'video_local' => $key,
                     ]);
                 }
 
-                $this->info("     ✓ OK");
+                $this->info('     ✓ OK');
+                $this->exitados++;
             } catch (\Throwable $e) {
                 $this->error("     ✗ Error: " . $e->getMessage());
+                $this->fallidos++;
             }
         }
 
@@ -168,11 +165,10 @@ class MigrarCloudinaryAB2 extends Command
         foreach ($leccionesTexto as $leccion) {
             $this->line("   → Lección #{$leccion->id} (contenido HTML): {$leccion->titulo}");
 
-            $contenido    = $leccion->contenido;
+            $contenido      = $leccion->contenido;
             $nuevaContenido = $contenido;
-            $count        = 0;
+            $count          = 0;
 
-            // Extraer todas las URLs de Cloudinary del HTML
             preg_match_all(
                 '#https://res\.cloudinary\.com/[^\s"\'<>]+#',
                 $contenido,
@@ -188,19 +184,21 @@ class MigrarCloudinaryAB2 extends Command
 
                     $nuevaContenido = str_replace($urlOriginal, $nuevaUrl, $nuevaContenido);
                     $count++;
+                    $this->exitados++;
                 } catch (\Throwable $e) {
                     $this->error("     ✗ Error con imagen {$urlOriginal}: " . $e->getMessage());
+                    $this->fallidos++;
                 }
             }
 
             if ($count > 0) {
                 $this->line("     Imágenes migradas: {$count}");
-                if (!$this->dryRun) {
+                if (! $this->dryRun) {
                     $leccion->update(['contenido' => $nuevaContenido]);
                 }
-                $this->info("     ✓ OK");
+                $this->info('     ✓ OK');
             } else {
-                $this->line("     Sin imágenes nuevas que migrar.");
+                $this->line('     Sin imágenes nuevas que migrar.');
             }
         }
     }
@@ -234,13 +232,15 @@ class MigrarCloudinaryAB2 extends Command
 
                 $this->line("     URL nueva: {$nuevaUrl}");
 
-                if (!$this->dryRun) {
+                if (! $this->dryRun) {
                     $user->update(['avatar' => $nuevaUrl]);
                 }
 
-                $this->info("     ✓ OK");
+                $this->info('     ✓ OK');
+                $this->exitados++;
             } catch (\Throwable $e) {
                 $this->error("     ✗ Error: " . $e->getMessage());
+                $this->fallidos++;
             }
         }
     }
@@ -250,20 +250,57 @@ class MigrarCloudinaryAB2 extends Command
     // ─────────────────────────────────────────────────
 
     /**
-     * Descarga un archivo de Cloudinary (u otra URL pública)
+     * Descarga un archivo desde una URL pública de Cloudinary
      * y lo sube a B2 con la key indicada.
-     * Retorna la URL pública en B2.
+     *
+     * Para Cloudinary, las URLs son públicas y no requieren
+     * autenticación — no se necesita el SDK de Cloudinary.
      */
     private function descargarYSubir(string $urlOrigen, string $key): string
     {
         if ($this->dryRun) {
-            return '[DRY-RUN] ' . config('b2.public_url') . '/' . $key;
+            return '[DRY-RUN] ' . $key;
         }
 
+        // Limpiar la URL de Cloudinary: eliminar transformaciones
+        // Ej: https://res.cloudinary.com/cloud/image/upload/w_300,c_fill/v1/carpeta/archivo.jpg
+        // →   https://res.cloudinary.com/cloud/image/upload/v1/carpeta/archivo.jpg
+        $urlLimpia = $this->limpiarUrlCloudinary($urlOrigen);
+
         $contentType = B2Service::detectarContentType($key);
-        $resultado   = $this->b2->subirDesdeUrl($urlOrigen, $key, $contentType);
+
+        // Intentar primero con URL limpia, luego con original
+        try {
+            $resultado = $this->b2->subirDesdeUrl($urlLimpia, $key, $contentType);
+        } catch (\Throwable $e) {
+            // Fallback a la URL original si la limpia falla
+            $resultado = $this->b2->subirDesdeUrl($urlOrigen, $key, $contentType);
+        }
 
         return $resultado['url'];
+    }
+
+    /**
+     * Elimina transformaciones de una URL de Cloudinary para
+     * obtener el archivo original.
+     *
+     * Cloudinary: .../upload/{transformaciones}/{version}/{public_id}
+     * Queremos:   .../upload/{version}/{public_id}  (sin transformaciones)
+     */
+    private function limpiarUrlCloudinary(string $url): string
+    {
+        // Si no es una URL de Cloudinary, la devolvemos tal cual
+        if (! str_contains($url, 'cloudinary.com')) {
+            return $url;
+        }
+
+        // Eliminar parámetros de transformación entre /upload/ y /v\d+/ o el public_id
+        // Patrón: /upload/t_xxx,w_300,.../  →  /upload/
+        return preg_replace(
+            '#(/upload/)(?:[a-z_,./0-9]+(?<!v\d{1,10})/)*#',
+            '$1',
+            $url
+        ) ?? $url;
     }
 
     /**
@@ -274,15 +311,12 @@ class MigrarCloudinaryAB2 extends Command
         $path = parse_url($url, PHP_URL_PATH) ?? $url;
         $ext  = pathinfo($path, PATHINFO_EXTENSION);
 
-        // Cloudinary puede devolver URLs sin extensión o con transformaciones
-        // Intenta detectar por el path
         if (empty($ext)) {
             if (str_contains($path, '/video/')) return 'mp4';
             if (str_contains($path, '/raw/'))   return 'pdf';
             return 'jpg';
         }
 
-        // Quitar parámetros si vienen pegados a la extensión
         return strtolower(explode('?', $ext)[0]);
     }
 }
