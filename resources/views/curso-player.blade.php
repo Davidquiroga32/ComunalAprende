@@ -124,6 +124,15 @@
 }
 .btn-completar:hover { transform:translateY(-1px); box-shadow:0 5px 18px rgba(16,185,129,.45); color:#fff; }
 .btn-completar.done { background:#f1f5f9;color:#94a3b8;box-shadow:none;cursor:default;border:1px solid var(--border); }
+.btn-completar.btn-bloqueada {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    box-shadow: 0 3px 14px rgba(245,158,11,.35);
+    cursor: pointer;
+}
+.btn-completar.btn-bloqueada:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 5px 18px rgba(245,158,11,.45);
+}
 
 .player-content { padding: 1.75rem; }
 
@@ -393,8 +402,7 @@
                     @endphp
                     @if($leccionBloqueada)
                         {{-- Lección bloqueada: botón que abre modal de aviso --}}
-                        <button type="button" class="btn-completar"
-                            style="background:#f59e0b;border-color:#f59e0b;"
+                        <button type="button" class="btn-completar btn-bloqueada"
                             onclick="abrirModalBloqueada()">
                             <i class="fas fa-lock"></i> Completa la lección anterior
                         </button>
@@ -490,10 +498,10 @@
                                     <div class="qstat"><div class="qstat-num">{{ $quiz->intentos_permitidos == -1 ? '∞' : $quiz->intentos_permitidos }}</div><div class="qstat-label">Intentos</div></div>
                                 </div>
                                 @if($leccionBloqueada)
-                                    <button type="button" onclick="abrirModalBloqueada()"
-                                        style="display:inline-flex;align-items:center;gap:.5rem;padding:.9rem 2rem;background:#f59e0b;border:none;border-radius:12px;color:#fff;font-size:.9rem;font-weight:700;cursor:pointer;">
+                                    <a href="#" onclick="event.preventDefault();abrirModalBloqueada();" class="btn-iniciar-quiz"
+                                        style="background:linear-gradient(135deg,#f59e0b,#d97706);box-shadow:0 4px 20px rgba(245,158,11,.3);">
                                         <i class="fas fa-lock"></i> Completa la lección anterior primero
-                                    </button>
+                                    </a>
                                 @elseif($puedeIntentar)
                                     <a href="{{ route('quiz.show', $quiz) }}" class="btn-iniciar-quiz">
                                         <i class="fas fa-play-circle"></i> {{ $intentosUser->count() > 0 ? 'Reintentar Quiz' : 'Iniciar Quiz' }}

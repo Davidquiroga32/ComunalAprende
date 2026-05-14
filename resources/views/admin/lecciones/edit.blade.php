@@ -207,33 +207,43 @@ tinymce.init({
     content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif; font-size: 15px; color: #334155; line-height: 1.7; max-width: 100%; } img { max-width: 100%; height: auto; border-radius: 6px; }',
     setup: function(editor) {
         editor.on('change', function() { editor.save(); });
+    },
+    init_instance_callback: function(editor) {
+        tipoChange('{{ old("tipo_contenido", $leccion->tipo_contenido) }}');
     }
 });
+
 function videoTab(tab) {
     document.getElementById('video-panel-url').style.display    = tab === 'url'    ? 'block' : 'none';
     document.getElementById('video-panel-upload').style.display = tab === 'upload' ? 'block' : 'none';
     document.getElementById('tab-url').style.cssText    = tab==='url'    ? 'flex:1;padding:.55rem;border-radius:8px;font-size:.83rem;font-weight:600;cursor:pointer;border:1.5px solid #0f3460;background:#0f3460;color:#fff;' : 'flex:1;padding:.55rem;border-radius:8px;font-size:.83rem;font-weight:600;cursor:pointer;border:1.5px solid #d1d9e0;background:#f8fafc;color:#64748b;';
     document.getElementById('tab-upload').style.cssText = tab==='upload' ? 'flex:1;padding:.55rem;border-radius:8px;font-size:.83rem;font-weight:600;cursor:pointer;border:1.5px solid #0f3460;background:#0f3460;color:#fff;' : 'flex:1;padding:.55rem;border-radius:8px;font-size:.83rem;font-weight:600;cursor:pointer;border:1.5px solid #d1d9e0;background:#f8fafc;color:#64748b;';
-    // Activar tab correcto si hay video local guardado
-    if (tab === 'upload' && document.querySelector('#video-panel-upload .fa-check-circle')) {
-        // ya tiene video local, mantener en upload
-    }
 }
+
 function tipoChange(tipo) {
     const seccion = document.getElementById('seccion-contenido');
     const banner  = document.querySelector('.quiz-banner');
+    const editor  = tinymce.get('contenido');
+
     if (tipo === 'quiz') {
         seccion.style.display = 'none';
         if (banner) banner.style.display = 'flex';
+        if (editor) editor.hide();
     } else {
         seccion.style.display = 'block';
         if (banner) banner.style.display = 'none';
-        document.getElementById('campo-texto').style.display   = tipo === 'texto' || tipo === 'tarea' ? 'block' : 'none';
+        document.getElementById('campo-texto').style.display   = (tipo === 'texto' || tipo === 'tarea') ? 'block' : 'none';
         document.getElementById('campo-video').style.display   = tipo === 'video' ? 'block' : 'none';
-        document.getElementById('campo-archivo').style.display = tipo === 'pdf' ? 'block' : 'none';
+        document.getElementById('campo-archivo').style.display = tipo === 'pdf'   ? 'block' : 'none';
+        if (editor) {
+            if (tipo === 'texto' || tipo === 'tarea') {
+                editor.show();
+            } else {
+                editor.hide();
+            }
+        }
     }
 }
-document.addEventListener('DOMContentLoaded', () => tipoChange('{{ old("tipo_contenido", $leccion->tipo_contenido) }}'));
 </script>
 @endsection
 
