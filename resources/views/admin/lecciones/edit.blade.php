@@ -113,7 +113,7 @@
 
         <div id="campo-texto" class="fg">
             <label for="contenido">Contenido</label>
-            <textarea id="contenido" name="contenido" class="fi" rows="10">{{ old('contenido', $leccion->contenido) }}</textarea>
+            <textarea id="contenido" name="contenido" class="fi" rows="10">{!! old('contenido', $leccion->contenido) !!}</textarea>
         </div>
 
         {{-- Video: tabs URL / Subir --}}
