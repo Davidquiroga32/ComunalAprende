@@ -170,10 +170,11 @@
     </div>
 </form>
 
-<script src="https://cdn.tiny.cloud/1/p30aqfgpavkfbyxyl70u3q5ebnu6du23mu5o9byqtxbpy65q/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
+<script src="https://cdn.jsdelivr.net/npm/tinymce@7/tinymce.min.js"></script>
 <script>
 tinymce.init({
     selector: '#contenido',
+    license_key: 'gpl',
     language: 'es',
     language_url: 'https://cdn.jsdelivr.net/npm/tinymce-i18n@23.10.9/langs7/es.js',
     height: 450,
