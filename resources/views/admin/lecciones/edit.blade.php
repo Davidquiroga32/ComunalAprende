@@ -44,7 +44,7 @@
 
 {{-- Banner especial si es lección de tipo quiz --}}
 @if($leccion->tipo_contenido === 'quiz')
-    <div class="quiz-banner">
+    <div class="quiz-banner" id="quiz-banner-top">
         <div>
             <div style="font-weight:700;font-size:.95rem;color:#5b21b6;">
                 <i class="fas fa-question-circle"></i> Esta lección es de tipo Quiz
@@ -107,17 +107,19 @@
         </div>
     </div>
 
-    {{-- Sección contenido solo para no-quiz --}}
-    <div id="seccion-contenido" class="adm-form-card" style="{{ $leccion->tipo_contenido === 'quiz' ? 'display:none;' : '' }}">
+    {{-- Sección contenido: se muestra/oculta con CSS puro, SIN depender de TinyMCE --}}
+    @php $tipoActual = old('tipo_contenido', $leccion->tipo_contenido); @endphp
+
+    <div id="seccion-contenido" class="adm-form-card" style="{{ $tipoActual === 'quiz' ? 'display:none;' : '' }}">
         <div class="adm-form-section"><i class="fas fa-align-left"></i> Contenido</div>
 
-        <div id="campo-texto" class="fg">
-            <label for="contenido">Contenido</label>
+        {{-- Texto / Tarea: textarea para TinyMCE --}}
+        <div id="campo-texto" style="{{ in_array($tipoActual, ['texto','tarea']) ? '' : 'display:none;' }}">
             <textarea id="contenido" name="contenido" class="fi" rows="10">{!! old('contenido', $leccion->contenido) !!}</textarea>
         </div>
 
-        {{-- Video: tabs URL / Subir --}}
-        <div id="campo-video" style="display:none;">
+        {{-- Video --}}
+        <div id="campo-video" style="{{ $tipoActual === 'video' ? '' : 'display:none;' }}">
             <div style="display:flex;gap:.5rem;margin-bottom:1rem;">
                 <button type="button" id="tab-url" onclick="videoTab('url')"
                     style="flex:1;padding:.55rem;border-radius:8px;font-size:.83rem;font-weight:600;cursor:pointer;border:1.5px solid #0f3460;background:#0f3460;color:#fff;">
@@ -144,15 +146,13 @@
                 <label for="video_archivo">Reemplazar video (MP4, MOV, WEBM &mdash; m&aacute;x. 500 MB)</label>
                 <input type="file" id="video_archivo" name="video_archivo" class="fi"
                     accept="video/mp4,video/quicktime,video/avi,video/webm">
-                <div style="font-size:.75rem;color:#94a3b8;margin-top:.35rem;">
-                    <i class="fas fa-info-circle"></i> Deja vac&iacute;o para mantener el video actual.
-                </div>
                 @error('video_archivo')<div class="fe"><i class="fas fa-exclamation-circle"></i> {{ $message }}</div>@enderror
             </div>
         </div>
 
-        <div id="campo-archivo" class="fg" style="display:none;">
-            <label>Archivo</label>
+        {{-- PDF --}}
+        <div id="campo-archivo" style="{{ $tipoActual === 'pdf' ? '' : 'display:none;' }}">
+            <label class="fg">Archivo</label>
             @if($leccion->archivo)
                 <div style="margin-bottom:.5rem;font-size:.84rem;color:#475569;">
                     <i class="fas fa-paperclip"></i> Archivo actual:
@@ -164,89 +164,138 @@
         </div>
     </div>
 
+    {{-- Banner quiz dentro del form (para cuando se cambia el tipo a quiz desde otro) --}}
+    <div id="seccion-quiz-banner" style="{{ $tipoActual !== 'quiz' ? 'display:none;' : '' }}">
+        <div class="quiz-banner">
+            <div>
+                <div style="font-weight:700;font-size:.95rem;color:#5b21b6;">
+                    <i class="fas fa-question-circle"></i> Esta lección es de tipo Quiz
+                </div>
+                <div style="font-size:.82rem;color:#7c3aed;margin-top:.25rem;">
+                    Las preguntas se gestionan desde el Editor de Quiz.
+                </div>
+            </div>
+            <a href="{{ route('admin.quiz.edit', $leccion) }}" class="btn-quiz">
+                <i class="fas fa-edit"></i> Ir al Editor de Quiz
+            </a>
+        </div>
+    </div>
+
     <div style="display:flex;align-items:center;gap:.75rem;">
         <button type="submit" class="btn-save"><i class="fas fa-save"></i> Guardar Cambios</button>
         <a href="{{ route('admin.cursos.show', $curso) }}" class="btn-cancel"><i class="fas fa-times"></i> Cancelar</a>
     </div>
 </form>
+@endsection
 
-<script src="https://cdn.jsdelivr.net/npm/tinymce@7/tinymce.min.js"></script>
+@section('extra-js')
+{{-- TinyMCE se carga al final del body gracias a @yield('extra-js') en admin.layout --}}
+<script src="https://cdn.jsdelivr.net/npm/tinymce@7/tinymce.min.js" referrerpolicy="origin"></script>
 <script>
-tinymce.init({
-    selector: '#contenido',
-    license_key: 'gpl',
-    language: 'es',
-    language_url: 'https://cdn.jsdelivr.net/npm/tinymce-i18n@23.10.9/langs7/es.js',
-    height: 450,
-    menubar: false,
-    branding: false,
-    promotion: false,
-    plugins: 'lists link image media table code wordcount',
-    toolbar: 'undo redo | blocks | bold italic underline | alignleft aligncenter alignright | bullist numlist | link image media | table | code',
-    block_formats: 'Párrafo=p; Encabezado 2=h2; Encabezado 3=h3; Encabezado 4=h4',
-    images_upload_url: '{{ route("admin.lecciones.upload-imagen") }}',
-    images_upload_handler: function(blobInfo, progress) {
-        return new Promise(function(resolve, reject) {
-            var xhr = new XMLHttpRequest();
-            xhr.open('POST', '{{ route("admin.lecciones.upload-imagen") }}');
-            xhr.setRequestHeader('X-CSRF-TOKEN', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
-            xhr.upload.onprogress = function(e) { progress(e.loaded / e.total * 100); };
-            xhr.onload = function() {
-                if (xhr.status === 200) {
-                    var json = JSON.parse(xhr.responseText);
-                    resolve(json.location);
-                } else {
-                    reject('Error al subir: ' + xhr.status);
-                }
-            };
-            var formData = new FormData();
-            formData.append('file', blobInfo.blob(), blobInfo.filename());
-            xhr.send(formData);
-        });
-    },
-    content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif; font-size: 15px; color: #334155; line-height: 1.7; max-width: 100%; } img { max-width: 100%; height: auto; border-radius: 6px; }',
-    setup: function(editor) {
-        editor.on('change', function() { editor.save(); });
-    },
-    init_instance_callback: function(editor) {
-        tipoChange('{{ old("tipo_contenido", $leccion->tipo_contenido) }}');
+// Configuración de TinyMCE
+var UPLOAD_URL  = '{{ route("admin.lecciones.upload-imagen") }}';
+var CSRF_TOKEN  = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+var TIPO_ACTUAL = '{{ old("tipo_contenido", $leccion->tipo_contenido) }}';
+
+function initTinyMCE() {
+    // Evitar doble inicialización
+    if (tinymce.get('contenido')) {
+        tinymce.get('contenido').remove();
     }
-});
+
+    tinymce.init({
+        selector: '#contenido',
+        license_key: 'gpl',
+        height: 450,
+        menubar: false,
+        branding: false,
+        promotion: false,
+        plugins: 'lists link image media table code wordcount',
+        toolbar: 'undo redo | blocks | bold italic underline | alignleft aligncenter alignright | bullist numlist | link image media | table | code',
+        block_formats: 'Párrafo=p; Encabezado 2=h2; Encabezado 3=h3; Encabezado 4=h4',
+        images_upload_url: UPLOAD_URL,
+        images_upload_handler: function(blobInfo, progress) {
+            return new Promise(function(resolve, reject) {
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', UPLOAD_URL);
+                xhr.setRequestHeader('X-CSRF-TOKEN', CSRF_TOKEN);
+                xhr.upload.onprogress = function(e) {
+                    progress(e.loaded / e.total * 100);
+                };
+                xhr.onload = function() {
+                    if (xhr.status === 200) {
+                        try {
+                            var json = JSON.parse(xhr.responseText);
+                            resolve(json.location);
+                        } catch(e) {
+                            reject('Respuesta inválida del servidor');
+                        }
+                    } else {
+                        reject('Error al subir la imagen: ' + xhr.status);
+                    }
+                };
+                xhr.onerror = function() { reject('Error de red'); };
+                var formData = new FormData();
+                formData.append('file', blobInfo.blob(), blobInfo.filename());
+                xhr.send(formData);
+            });
+        },
+        content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 15px; color: #334155; line-height: 1.7; } img { max-width: 100%; height: auto; border-radius: 6px; }',
+        setup: function(editor) {
+            editor.on('change', function() { editor.save(); });
+        }
+    });
+}
+
+// Muestra/oculta secciones SIN tocar TinyMCE (solo CSS)
+function tipoChange(tipo) {
+    var secContenido    = document.getElementById('seccion-contenido');
+    var campoTexto      = document.getElementById('campo-texto');
+    var campoVideo      = document.getElementById('campo-video');
+    var campoArchivo    = document.getElementById('campo-archivo');
+    var secQuizBanner   = document.getElementById('seccion-quiz-banner');
+
+    if (tipo === 'quiz') {
+        secContenido.style.display  = 'none';
+        secQuizBanner.style.display = 'block';
+        // Destruir TinyMCE si existe para no desperdiciar recursos
+        if (tinymce.get('contenido')) tinymce.get('contenido').remove();
+    } else {
+        secContenido.style.display  = 'block';
+        secQuizBanner.style.display = 'none';
+
+        campoTexto.style.display   = (tipo === 'texto' || tipo === 'tarea') ? 'block' : 'none';
+        campoVideo.style.display   = tipo === 'video' ? 'block' : 'none';
+        campoArchivo.style.display = tipo === 'pdf'   ? 'block' : 'none';
+
+        // Inicializar TinyMCE solo para texto/tarea y solo si el textarea existe y está visible
+        if (tipo === 'texto' || tipo === 'tarea') {
+            // Pequeño delay para que el DOM actualice el display antes de que TinyMCE mida el elemento
+            setTimeout(function() {
+                initTinyMCE();
+            }, 50);
+        } else {
+            // Para video/pdf no necesitamos TinyMCE
+            if (tinymce.get('contenido')) tinymce.get('contenido').remove();
+        }
+    }
+}
 
 function videoTab(tab) {
     document.getElementById('video-panel-url').style.display    = tab === 'url'    ? 'block' : 'none';
     document.getElementById('video-panel-upload').style.display = tab === 'upload' ? 'block' : 'none';
-    document.getElementById('tab-url').style.cssText    = tab==='url'    ? 'flex:1;padding:.55rem;border-radius:8px;font-size:.83rem;font-weight:600;cursor:pointer;border:1.5px solid #0f3460;background:#0f3460;color:#fff;' : 'flex:1;padding:.55rem;border-radius:8px;font-size:.83rem;font-weight:600;cursor:pointer;border:1.5px solid #d1d9e0;background:#f8fafc;color:#64748b;';
-    document.getElementById('tab-upload').style.cssText = tab==='upload' ? 'flex:1;padding:.55rem;border-radius:8px;font-size:.83rem;font-weight:600;cursor:pointer;border:1.5px solid #0f3460;background:#0f3460;color:#fff;' : 'flex:1;padding:.55rem;border-radius:8px;font-size:.83rem;font-weight:600;cursor:pointer;border:1.5px solid #d1d9e0;background:#f8fafc;color:#64748b;';
+    var baseStyle = 'flex:1;padding:.55rem;border-radius:8px;font-size:.83rem;font-weight:600;cursor:pointer;';
+    document.getElementById('tab-url').style.cssText    = baseStyle + (tab === 'url'    ? 'border:1.5px solid #0f3460;background:#0f3460;color:#fff;' : 'border:1.5px solid #d1d9e0;background:#f8fafc;color:#64748b;');
+    document.getElementById('tab-upload').style.cssText = baseStyle + (tab === 'upload' ? 'border:1.5px solid #0f3460;background:#0f3460;color:#fff;' : 'border:1.5px solid #d1d9e0;background:#f8fafc;color:#64748b;');
 }
 
-function tipoChange(tipo) {
-    const seccion = document.getElementById('seccion-contenido');
-    const banner  = document.querySelector('.quiz-banner');
-    const editor  = tinymce.get('contenido');
-
-    if (tipo === 'quiz') {
-        seccion.style.display = 'none';
-        if (banner) banner.style.display = 'flex';
-        if (editor) editor.hide();
-    } else {
-        seccion.style.display = 'block';
-        if (banner) banner.style.display = 'none';
-        document.getElementById('campo-texto').style.display   = (tipo === 'texto' || tipo === 'tarea') ? 'block' : 'none';
-        document.getElementById('campo-video').style.display   = tipo === 'video' ? 'block' : 'none';
-        document.getElementById('campo-archivo').style.display = tipo === 'pdf'   ? 'block' : 'none';
-        if (editor) {
-            if (tipo === 'texto' || tipo === 'tarea') {
-                editor.show();
-            } else {
-                editor.hide();
-            }
-        }
+// Inicialización al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    // Si el tipo actual es texto o tarea, inicializar TinyMCE directamente
+    if (TIPO_ACTUAL === 'texto' || TIPO_ACTUAL === 'tarea') {
+        initTinyMCE();
     }
-}
+    // Para los demás tipos el textarea ya está oculto, no hace falta TinyMCE
+});
 </script>
 @endsection
-
-173
-159
-141
