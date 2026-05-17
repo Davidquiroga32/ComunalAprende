@@ -56,6 +56,8 @@ class CertificadoController extends Controller
             ->setChromePath(env('PUPPETEER_EXECUTABLE_PATH', '/root/.nix-profile/bin/chromium'))
             ->addChromiumArguments(['no-sandbox', 'disable-setuid-sandbox', 'disable-dev-shm-usage', 'disable-gpu']);
 
+            return response($html)->header('Content-Type', 'text/html');
+
         $pdf = $browsershot->pdf();
 
         return response($pdf)
