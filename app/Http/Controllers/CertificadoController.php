@@ -35,6 +35,14 @@ class CertificadoController extends Controller
         $qrSvg    = QrCode::size(150)->margin(1)->generate($urlVerificacion);
         $qrBase64 = base64_encode($qrSvg);
 
+        $fontCss = '';
+        $fontPaths = [
+            '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+            '/run/current-system/sw/share/fonts/truetype/DejaVuSans.ttf',
+            // Nix en Railway suele tenerlas aquí:
+            '/nix/store',  // buscar dinámicamente
+        ];
+
         // Renderizar vista a HTML
         $html = view('certificados.certificado-pdf', [
             'certificado'     => $certificado,
@@ -54,7 +62,15 @@ class CertificadoController extends Controller
             ->showBackground()
             ->waitUntilNetworkIdle()
             ->setChromePath(env('PUPPETEER_EXECUTABLE_PATH', '/root/.nix-profile/bin/chromium'))
-            ->addChromiumArguments(['no-sandbox', 'disable-setuid-sandbox', 'disable-dev-shm-usage', 'disable-gpu']);
+            ->addChromiumArguments([
+                'no-sandbox',
+                'disable-setuid-sandbox', 
+                'disable-dev-shm-usage',
+                'disable-gpu',
+                'disable-web-security',        // ← permite cargar recursos locales
+                'allow-file-access-from-files', // ← acceso a archivos locales
+                'font-render-hinting=none',    // ← mejor renderizado de fuentes
+            ]);
 
         $pdf = $browsershot->pdf();
 
