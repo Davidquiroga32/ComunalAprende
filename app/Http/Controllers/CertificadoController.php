@@ -52,12 +52,9 @@ class CertificadoController extends Controller
             ->paperSize(297, 210)
             ->margins(0, 0, 0, 0)
             ->showBackground()
-            ->waitUntilDOMContentLoaded();
-
-        if (config('app.env') === 'production') {
-            $browsershot->setChromePath(env('PUPPETEER_EXECUTABLE_PATH', '/root/.nix-profile/bin/chromium'))
-                        ->addChromiumArguments(['no-sandbox', 'disable-setuid-sandbox', 'disable-dev-shm-usage', 'disable-gpu']);
-        }
+            ->waitUntilNetworkIdle()
+            ->setChromePath(env('PUPPETEER_EXECUTABLE_PATH', '/root/.nix-profile/bin/chromium'))
+            ->addChromiumArguments(['no-sandbox', 'disable-setuid-sandbox', 'disable-dev-shm-usage', 'disable-gpu']);
 
         $pdf = $browsershot->pdf();
 
