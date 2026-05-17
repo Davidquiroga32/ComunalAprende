@@ -123,3 +123,19 @@ Route::middleware(['auth', 'es_admin'])->prefix('admin')->name('admin.')->group(
     Route::delete('pregunta/{pregunta}',       [AdminQuizController::class, 'eliminarPregunta'])->name('quiz.eliminarPregunta');
     Route::get('quiz/{quiz}/estadisticas',     [AdminQuizController::class, 'estadisticas'])->name('quiz.estadisticas');
 });
+
+// BORRAR DESPUÉS DE USAR
+Route::get('/debug-chrome', function () {
+    $rutas = [
+        shell_exec('which chromium 2>/dev/null'),
+        shell_exec('which chromium-browser 2>/dev/null'),
+        shell_exec('which google-chrome 2>/dev/null'),
+        shell_exec('find /run -name "chromium" -type f 2>/dev/null | head -3'),
+        shell_exec('find /nix -name "chromium" -type f 2>/dev/null | head -3'),
+    ];
+    
+    return response()->json([
+        'puppeteer_env' => env('PUPPETEER_EXECUTABLE_PATH'),
+        'rutas' => $rutas,
+    ]);
+});
