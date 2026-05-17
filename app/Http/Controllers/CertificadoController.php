@@ -54,10 +54,9 @@ class CertificadoController extends Controller
             ->showBackground()
             ->waitUntilDOMContentLoaded();
 
-        // En Railway (producción) usar el Chromium del sistema
-        if (config('app.env') === 'production' && env('PUPPETEER_EXECUTABLE_PATH')) {
-            $browsershot->setChromePath(env('PUPPETEER_EXECUTABLE_PATH'))
-                        ->addChromiumArguments(['--no-sandbox', '--disable-setuid-sandbox']);
+        if (config('app.env') === 'production') {
+            $browsershot->setChromePath(env('PUPPETEER_EXECUTABLE_PATH', '/root/.nix-profile/bin/chromium'))
+                        ->addChromiumArguments(['no-sandbox', 'disable-setuid-sandbox', 'disable-dev-shm-usage', 'disable-gpu']);
         }
 
         $pdf = $browsershot->pdf();
