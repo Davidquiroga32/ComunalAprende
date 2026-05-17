@@ -11,7 +11,7 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-        font-family: 'Trebuchet MS', 'Segoe UI', sans-serif;
+        font-family: 'DejaVu Sans', 'Liberation Sans', Arial;
         background: #ffffff;
         width: 297mm;
         height: 210mm;
@@ -137,7 +137,7 @@
         position: absolute;
         top: 50%; left: calc(18mm + 50%);
         transform: translate(-50%, -50%) rotate(-20deg);
-        font-family: Georgia, serif;
+        font-family: 'DejaVu Serif', 'Liberation Serif';
         font-size: 50pt;
         font-weight: 700;
         color: rgba(10,46,88,0.04);
@@ -202,7 +202,7 @@
         margin-bottom: 2mm;
     }
     .header-title {
-        font-family: Georgia, serif;
+        font-family: 'DejaVu Serif', 'Liberation Serif';
         font-size: 22pt;
         font-weight: 700;
         color: #ffffff;
@@ -288,7 +288,7 @@
     }
 
     .nombre {
-        font-family: Georgia, serif;
+        font-family: 'DejaVu Serif', 'Liberation Serif';
         font-size: 26pt;
         font-weight: 700;
         color: #071D36;
@@ -304,7 +304,7 @@
     }
 
     .por-haber {
-        font-family: Georgia, serif;
+        font-family: 'DejaVu Serif', 'Liberation Serif';
         font-size: 8.5pt;
         font-style: italic;
         color: #5a6e8a;
@@ -337,7 +337,7 @@
         margin-bottom: 1mm;
     }
     .curso-titulo {
-        font-family: Georgia, serif;
+        font-family: 'DejaVu Serif', 'Liberation Serif';
         font-size: 13pt;
         font-weight: 700;
         color: #ffffff;
@@ -418,7 +418,7 @@
         margin-bottom: 2mm;
     }
     .firma-nombre {
-        font-family: Georgia, serif;
+        font-family: 'DejaVu Serif', 'Liberation Serif';
         font-size: 8pt;
         font-weight: 700;
         color: #071D36;
