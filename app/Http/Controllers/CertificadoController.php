@@ -15,59 +15,65 @@ class CertificadoController extends Controller
     private function getFontFaceCSS(): string
     {
         $fonts = [
-            // Poppins Regular
-            '/usr/share/fonts/truetype/google-fonts/Poppins-Regular.ttf',
-            // Poppins Bold
-            '/usr/share/fonts/truetype/google-fonts/Poppins-Bold.ttf',
-            // DejaVu Sans (fallback robusto para caracteres especiales como tildes)
-            '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
-            '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
+            [
+                'family' => 'Poppins',
+                'weight' => 400,
+                'url'    => 'https://fonts.gstatic.com/s/poppins/v20/pxiEyp8kv8JHgFVrJJfecg.woff2',
+                'cache'  => storage_path('fonts/poppins-400.woff2'),
+            ],
+            [
+                'family' => 'Poppins',
+                'weight' => 700,
+                'url'    => 'https://fonts.gstatic.com/s/poppins/v20/pxiByp8kv8JHgFVrLCz7Z1xlFQ.woff2',
+                'cache'  => storage_path('fonts/poppins-700.woff2'),
+            ],
+            [
+                'family' => 'Poppins',
+                'weight' => 900,
+                'url'    => 'https://fonts.gstatic.com/s/poppins/v20/pxiByp8kv8JHgFVrLBT5Z1xlFQ.woff2',
+                'cache'  => storage_path('fonts/poppins-900.woff2'),
+            ],
         ];
+
+        // Crear directorio si no existe
+        if (!is_dir(storage_path('fonts'))) {
+            mkdir(storage_path('fonts'), 0755, true);
+        }
 
         $css = '';
 
-        // Poppins Regular
-        if (file_exists($fonts[0])) {
-            $b64 = base64_encode(file_get_contents($fonts[0]));
-            $css .= "@font-face {
-                font-family: 'Poppins';
-                font-weight: 400;
-                font-style: normal;
-                src: url('data:font/truetype;base64,{$b64}') format('truetype');
-            }\n";
+        foreach ($fonts as $font) {
+            // Intentar leer desde caché local primero
+            if (file_exists($font['cache'])) {
+                $data = file_get_contents($font['cache']);
+            } else {
+                // Descargar y cachear
+                $ctx = stream_context_create([
+                    'http' => [
+                        'timeout' => 10,
+                        'header'  => "User-Agent: Mozilla/5.0\r\n",
+                    ],
+                ]);
+                $data = @file_get_contents($font['url'], false, $ctx);
+                if ($data) {
+                    file_put_contents($font['cache'], $data);
+                }
+            }
+
+            if ($data) {
+                $b64 = base64_encode($data);
+                $css .= "@font-face {
+                    font-family: '{$font['family']}';
+                    font-weight: {$font['weight']};
+                    font-style: normal;
+                    src: url('data:font/woff2;base64,{$b64}') format('woff2');
+                }\n";
+            }
         }
 
-        // Poppins Bold
-        if (file_exists($fonts[1])) {
-            $b64 = base64_encode(file_get_contents($fonts[1]));
-            $css .= "@font-face {
-                font-family: 'Poppins';
-                font-weight: 700;
-                font-style: normal;
-                src: url('data:font/truetype;base64,{$b64}') format('truetype');
-            }\n";
-        }
-
-        // DejaVu Sans Regular (fallback para tildes y caracteres especiales)
-        if (file_exists($fonts[2])) {
-            $b64 = base64_encode(file_get_contents($fonts[2]));
-            $css .= "@font-face {
-                font-family: 'DejaVu Sans';
-                font-weight: 400;
-                font-style: normal;
-                src: url('data:font/truetype;base64,{$b64}') format('truetype');
-            }\n";
-        }
-
-        // DejaVu Sans Bold
-        if (file_exists($fonts[3])) {
-            $b64 = base64_encode(file_get_contents($fonts[3]));
-            $css .= "@font-face {
-                font-family: 'DejaVu Sans';
-                font-weight: 700;
-                font-style: normal;
-                src: url('data:font/truetype;base64,{$b64}') format('truetype');
-            }\n";
+        // Fallback: si no se pudieron cargar fuentes, usar system fonts
+        if (empty($css)) {
+            $css = "/* Fuentes no disponibles, usando fallback del sistema */\n";
         }
 
         return $css;
@@ -155,7 +161,6 @@ class CertificadoController extends Controller
             ->paperSize(297, 210)
             ->margins(0, 0, 0, 0)
             ->showBackground()
-            ->waitUntilNetworkIdle()
             ->windowSize(1280, 800)
             ->timeout(120)
             ->setChromePath($chromePath)

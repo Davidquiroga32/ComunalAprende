@@ -5,6 +5,7 @@
 <style>
     /* ══ FUENTES EMBEBIDAS DESDE EL SERVIDOR ══ */
     {!! $fontFaceCSS !!}
+    * { -webkit-font-smoothing: antialiased; }
 
     @page {
         size: 297mm 210mm landscape;
@@ -15,7 +16,7 @@
 
     body {
         /* Poppins como principal, DejaVu Sans como fallback para tildes/eñes */
-        font-family: 'Poppins', 'DejaVu Sans', Arial, sans-serif;
+        font-family: 'Poppins', Arial, Helvetica, sans-serif;
         background: #ffffff;
         width: 297mm;
         height: 210mm;
