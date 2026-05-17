@@ -8,6 +8,71 @@ use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class CertificadoController extends Controller
 {
+    /**
+     * Rutas de fuentes locales disponibles en Railway (Nixpacks).
+     * Todas están en /usr/share/fonts/truetype/google-fonts/ y dejavu/
+     */
+    private function getFontFaceCSS(): string
+    {
+        $fonts = [
+            // Poppins Regular
+            '/usr/share/fonts/truetype/google-fonts/Poppins-Regular.ttf',
+            // Poppins Bold
+            '/usr/share/fonts/truetype/google-fonts/Poppins-Bold.ttf',
+            // DejaVu Sans (fallback robusto para caracteres especiales como tildes)
+            '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+            '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
+        ];
+
+        $css = '';
+
+        // Poppins Regular
+        if (file_exists($fonts[0])) {
+            $b64 = base64_encode(file_get_contents($fonts[0]));
+            $css .= "@font-face {
+                font-family: 'Poppins';
+                font-weight: 400;
+                font-style: normal;
+                src: url('data:font/truetype;base64,{$b64}') format('truetype');
+            }\n";
+        }
+
+        // Poppins Bold
+        if (file_exists($fonts[1])) {
+            $b64 = base64_encode(file_get_contents($fonts[1]));
+            $css .= "@font-face {
+                font-family: 'Poppins';
+                font-weight: 700;
+                font-style: normal;
+                src: url('data:font/truetype;base64,{$b64}') format('truetype');
+            }\n";
+        }
+
+        // DejaVu Sans Regular (fallback para tildes y caracteres especiales)
+        if (file_exists($fonts[2])) {
+            $b64 = base64_encode(file_get_contents($fonts[2]));
+            $css .= "@font-face {
+                font-family: 'DejaVu Sans';
+                font-weight: 400;
+                font-style: normal;
+                src: url('data:font/truetype;base64,{$b64}') format('truetype');
+            }\n";
+        }
+
+        // DejaVu Sans Bold
+        if (file_exists($fonts[3])) {
+            $b64 = base64_encode(file_get_contents($fonts[3]));
+            $css .= "@font-face {
+                font-family: 'DejaVu Sans';
+                font-weight: 700;
+                font-style: normal;
+                src: url('data:font/truetype;base64,{$b64}') format('truetype');
+            }\n";
+        }
+
+        return $css;
+    }
+
     /** Descargar PDF del certificado */
     public function descargar(Curso $curso)
     {
@@ -30,18 +95,27 @@ class CertificadoController extends Controller
             ['fecha_emision' => $inscripcion->pivot->fecha_completado ?? now()]
         );
 
-        // Generar QR
+        // Generar QR como SVG y convertir a Base64
         $urlVerificacion = route('certificado.verificar', $certificado->codigo);
         $qrSvg    = QrCode::size(150)->margin(1)->generate($urlVerificacion);
         $qrBase64 = base64_encode($qrSvg);
 
-        $fontCss = '';
-        $fontPaths = [
-            '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
-            '/run/current-system/sw/share/fonts/truetype/DejaVuSans.ttf',
-            // Nix en Railway suele tenerlas aquí:
-            '/nix/store',  // buscar dinámicamente
-        ];
+        // Obtener CSS con fuentes embebidas
+        $fontFaceCSS = $this->getFontFaceCSS();
+
+        // Convertir logo a Base64 para embeber en el HTML
+        $logoBase64 = '';
+        $logoPath = public_path('images/logo.png');
+        if (file_exists($logoPath)) {
+            $logoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
+        }
+
+        // Convertir firma a Base64 si existe
+        $firmaBase64 = '';
+        $firmaPath = public_path('images/firma-ivan-castillo.png');
+        if (file_exists($firmaPath)) {
+            $firmaBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($firmaPath));
+        }
 
         // Renderizar vista a HTML
         $html = view('certificados.certificado-pdf', [
@@ -50,10 +124,31 @@ class CertificadoController extends Controller
             'curso'           => $curso,
             'qrBase64'        => $qrBase64,
             'urlVerificacion' => $urlVerificacion,
+            'fontFaceCSS'     => $fontFaceCSS,
+            'logoBase64'      => $logoBase64,
+            'firmaBase64'     => $firmaBase64,
         ])->render();
 
         $filename = 'certificado-' . str_replace(' ', '-', strtolower($curso->titulo)) . '.pdf';
 
+        $chromePath = env('PUPPETEER_EXECUTABLE_PATH', '/run/current-system/sw/bin/chromium');
+
+        // Fallback de rutas de Chromium en Railway
+        if (!file_exists($chromePath)) {
+            $fallbacks = [
+                '/run/current-system/sw/bin/chromium',
+                '/root/.nix-profile/bin/chromium',
+                '/usr/bin/chromium-browser',
+                '/usr/bin/chromium',
+                '/nix/var/nix/profiles/default/bin/chromium',
+            ];
+            foreach ($fallbacks as $path) {
+                if (file_exists($path)) {
+                    $chromePath = $path;
+                    break;
+                }
+            }
+        }
 
         $browsershot = Browsershot::html($html)
             ->landscape()
@@ -61,15 +156,17 @@ class CertificadoController extends Controller
             ->margins(0, 0, 0, 0)
             ->showBackground()
             ->waitUntilNetworkIdle()
-            ->setChromePath(env('PUPPETEER_EXECUTABLE_PATH', '/root/.nix-profile/bin/chromium'))
+            ->setChromePath($chromePath)
             ->addChromiumArguments([
                 'no-sandbox',
-                'disable-setuid-sandbox', 
+                'disable-setuid-sandbox',
                 'disable-dev-shm-usage',
                 'disable-gpu',
-                'disable-web-security',        // ← permite cargar recursos locales
-                'allow-file-access-from-files', // ← acceso a archivos locales
-                'font-render-hinting=none',    // ← mejor renderizado de fuentes
+                'disable-web-security',
+                'allow-file-access-from-files',
+                'font-render-hinting=none',
+                'run-all-compositor-stages-before-draw',
+                'virtual-time-budget=5000',
             ]);
 
         $pdf = $browsershot->pdf();
