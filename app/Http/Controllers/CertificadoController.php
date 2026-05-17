@@ -156,6 +156,8 @@ class CertificadoController extends Controller
             ->margins(0, 0, 0, 0)
             ->showBackground()
             ->waitUntilNetworkIdle()
+            ->windowSize(1280, 800)
+            ->timeout(120)
             ->setChromePath($chromePath)
             ->addChromiumArguments([
                 'no-sandbox',
@@ -164,10 +166,12 @@ class CertificadoController extends Controller
                 'disable-gpu',
                 'disable-web-security',
                 'allow-file-access-from-files',
+                'disable-extensions',
+                'disable-software-rasterizer',
                 'font-render-hinting=none',
                 'run-all-compositor-stages-before-draw',
-                'virtual-time-budget=5000',
             ]);
+
 
         $pdf = $browsershot->pdf();
 
